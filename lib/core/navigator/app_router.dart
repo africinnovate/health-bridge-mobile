@@ -1,5 +1,6 @@
 import 'package:HealthBridge/presentation/screens/auth/create_account_screen.dart';
 import 'package:HealthBridge/presentation/screens/auth/preference_screen.dart';
+import 'package:HealthBridge/presentation/screens/auth/verify_account_screen.dart';
 import 'package:go_router/go_router.dart';
 
 import '../constants/app_routes.dart';
@@ -17,17 +18,11 @@ class AppRouter {
         path: AppRoutes.createAccount,
         builder: (context, state) => CreateAccountScreen(),
       ),
-      // GoRoute(
-      //   path: "${AppRoutes.loginSignupPath}/:reason",
-      //   builder: (context, state) {
-      //     String source = state.pathParameters['reason'] ?? "";
-      //     return LoginSignupScreen(initialReason: source);
-      //   },
-      // ),
-      // GoRoute(
-      //   path: AppRoutes.homeScreenPath,
-      //   builder: (context, state) => HomeScreen(),
-      // ),
+
+      GoRoute(
+        path: AppRoutes.verifyOtp,
+        builder: (context, state) => VerifyAccountScreen(),
+      ),
       // GoRoute(
       //   path: AppRoutes.eduRankPickerPath,
       //   builder: (context, state) {

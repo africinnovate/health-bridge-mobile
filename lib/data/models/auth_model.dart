@@ -1,32 +1,32 @@
 class RegisterModel {
   String email;
-  String firstName;
-  String lastName;
-  String gender;
-  String password;
-  String phone;
   String role;
+  String password;
+  // String firstName;
+  // String lastName;
+  // String gender;
+  // String phone;
 
   RegisterModel({
     required this.email,
-    required this.firstName,
-    required this.lastName,
-    required this.gender,
     required this.password,
-    required this.phone,
     required this.role,
+    // required this.firstName,
+    // required this.lastName,
+    // required this.gender,
+    // required this.phone,
   });
 
   // Convert JSON to RegisterModel
   factory RegisterModel.fromJson(Map<String, dynamic> json) {
     return RegisterModel(
       email: json['email'] ?? '',
-      firstName: json['first_name'] ?? '',
-      lastName: json['last_name'] ?? '',
-      gender: json['gender'] ?? '',
       password: json['password'] ?? '',
-      phone: json['phone'] ?? '',
       role: json['role'] ?? '',
+      // firstName: json['first_name'] ?? '',
+      // lastName: json['last_name'] ?? '',
+      // gender: json['gender'] ?? '',
+      // phone: json['phone'] ?? '',
     );
   }
 
@@ -34,12 +34,12 @@ class RegisterModel {
   Map<String, dynamic> toJson() {
     return {
       'email': email,
-      'first_name': firstName,
-      'last_name': lastName,
-      'gender': gender,
       'password': password,
-      'phone': phone,
       'role': role,
+      // 'first_name': firstName,
+      // 'last_name': lastName,
+      // 'gender': gender,
+      // 'phone': phone,
     };
   }
 }

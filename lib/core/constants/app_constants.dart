@@ -46,7 +46,7 @@ class AppConstants {
   // static const int receiveTimeout = 30000; // 30 seconds
   //
   // // OTP
-  static const int otpLength = 6;
+  static const int otpLength = 4;
   static const int otpResendDelay = 60; // seconds
   //
   // // Phone Number

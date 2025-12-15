@@ -25,20 +25,26 @@ class AuthProvider extends ChangeNotifier {
   String role = '';
 
   // RegisterModel _registerModel;
-  // RegisterModel get registerModel => _registerModel;
+  RegisterModel get registerModel => RegisterModel(
+        email: email,
+        password: password,
+        role: role,
+      );
 
   Future<ResponseStatusM> registerUser() async {
-    RegisterModel _registerModel = RegisterModel(
-      email: email,
-      firstName: firstName,
-      lastName: lastName,
-      gender: gender,
-      password: password,
-      phone: phone,
-      role: role,
-    );
-    return getResponse(authRepository.registerUser(_registerModel));
+    // RegisterModel _registerModel = RegisterModel(
+    //   email: email,
+    //   password: password,
+    //   role: role,
+    // );
+    return getResponse(authRepository.registerUser(registerModel));
   }
+
+  resendOtp() {}
+
+  verifyOtp({required String otp}) {}
+
+  login() {}
 
   // reusable function
   Future<ResponseStatusM> getResponse(Future<ResponseStatusM> repoCall,

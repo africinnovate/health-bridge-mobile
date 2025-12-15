@@ -1,12 +1,15 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
+import 'custom_text.dart';
+
 class CustomButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String text;
   final Color? color;
   final bool? shouldFullScreen;
   final bool shouldProceed;
+  final bool showLoading;
 
   const CustomButton({
     super.key,
@@ -15,12 +18,13 @@ class CustomButton extends StatelessWidget {
     this.color,
     this.shouldFullScreen = true,
     this.shouldProceed = true,
+    this.showLoading = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: shouldProceed ? onPressed : null,
+      onPressed: shouldProceed && !showLoading ? onPressed : null,
       style: ElevatedButton.styleFrom(
         padding: shouldFullScreen == true
             ? null
@@ -33,15 +37,20 @@ class CustomButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
       ),
-      child: Text(
-        text, // Localize the button text
-        maxLines: 1,
-        overflow: TextOverflow.visible,
-        style: TextStyle(
-          fontSize: 18,
-          color: AppColors.white,
-        ),
-      ),
+      child: showLoading
+          ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            )
+          : CustomText(
+              text: text,
+              size: 18,
+              color: AppColors.white,
+            ),
     );
   }
 }
