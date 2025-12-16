@@ -12,22 +12,26 @@ class AppRoutes {
   static const String forgotPassword = '/forgot-password';
   static const String resetPassword = '/reset-password';
 
-  // Main App Routes
-  static const String home = '/home';
-  static const String profile = '/profile';
-  static const String paymentBill = '/payment-bills';
-  static const String editProfile = '/edit-profile';
-  static const String changePassword = '/change-password';
-  static const String orders = '/orders';
-  static const String orderDetails = '/order-details';
-  static const String createOrder = '/create-order';
-  static const String tracking = '/tracking';
+  // Profile Routes
+  static const String setProfilePatient = '/set-profile-patient';
+  static const String setProfileHospital = '/set-profile-hospital';
+  static const String setProfileDonor = '/set-profile-donor';
+  static const String setProfileSpecialist = '/set-profile-specialist';
+  static const String patientConsent = '/patient_consent';
+  static const String hospitalComplete = '/hospital-complete-profile';
 
-  // Settings
-  static const String settings = '/settings';
-  static const String securitySettings = '/security-settings';
-  static const String notifications = '/notifications';
-  static const String help = '/help';
+  // blood services
+  static const String bloodServiceHospital = '/blood-service-hospital';
+  static const String bloodDonorList = '/blood-donor-list';
+  static const String bloodRequestDetails = '/blood-request-details';
+
+  static const String notificationsHospital = '/notifications-hospital';
+
+  // Main App Routes
+  static const String dashboardHospital = '/dashboard-hospital';
+  static const String dashboardPatient = '/dashboard-patient';
+  static const String dashboardDonor = '/dashboard-donor';
+  static const String dashboardSpecialist = '/dashboard-specialist';
 
   // Payment
   static const String addPaymentMethod = '/add-payment-method';

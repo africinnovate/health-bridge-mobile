@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
 class InputTextFieldWG extends StatelessWidget {
-  final TextEditingController controller;
+  final TextEditingController? controller;
   final Function(String)? onChanged;
   final Color? textColor;
   final Color? hintColor;
@@ -17,7 +17,7 @@ class InputTextFieldWG extends StatelessWidget {
 
   const InputTextFieldWG({
     super.key,
-    required this.controller,
+    this.controller,
     this.onChanged,
     this.textColor,
     this.hintColor,

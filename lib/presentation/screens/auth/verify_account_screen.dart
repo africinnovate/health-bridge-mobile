@@ -70,38 +70,11 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
       otp: _otpController.text,
     );
 
+    // TODO: Handle navigation based on verification result and role
     if (!mounted) return;
 
-    if (success) {
-      SnackBarUtils.showSuccess(context, 'Email verified successfully!');
-
-      // Auto-login after successful verification if password is available
-      if (authProvider.password.isNotEmpty) {
-        final loginSuccess = await authProvider.login();
-
-        if (!mounted) return;
-
-        if (loginSuccess) {
-          SnackBarUtils.showSuccess(context, 'Welcome to Health Bridge!');
-          context.go(AppRoutes.home);
-        } else {
-          // Login failed after verification, redirect to login screen
-          SnackBarUtils.showError(
-            context,
-            'Please login to continue',
-          );
-          context.go(AppRoutes.login);
-        }
-      } else {
-        // No password provided, just go to login screen
-        context.go(AppRoutes.login);
-      }
-    } else {
-      SnackBarUtils.showError(
-        context,
-        'Verification failed',
-      );
-    }
+    context.goNextScreen(AppRoutes.setProfilePatient);
+    ;
   }
 
   Future<void> _resendOtp() async {

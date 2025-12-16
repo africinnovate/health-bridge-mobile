@@ -65,6 +65,18 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
             const SizedBox(height: 12),
 
             RoleCard(
+              title: 'Donor',
+              description: 'Donate to hospitals and support patients in need.',
+              value: 'donor',
+              groupValue: selectedRole,
+              onChanged: (value) {
+                setState(() => selectedRole = value);
+              },
+            ),
+
+            const SizedBox(height: 12),
+
+            RoleCard(
               title: 'Specialist',
               description:
                   'Consult with patients, manage your appointments, and provide reports through the HealthBridge network.',
@@ -163,7 +175,7 @@ class RoleCard extends StatelessWidget {
                   Text(
                     description,
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       color: Color(0xFF6B7280),
                     ),
                   ),

@@ -1,8 +1,14 @@
 import 'package:HealthBridge/presentation/screens/auth/create_account_screen.dart';
 import 'package:HealthBridge/presentation/screens/auth/preference_screen.dart';
 import 'package:HealthBridge/presentation/screens/auth/verify_account_screen.dart';
+import 'package:HealthBridge/presentation/screens/specialist/profile_onboard/specialist_profile_screen.dart';
 import 'package:go_router/go_router.dart';
-
+import '../../presentation/screens/hospital/profile_onboard/blood_services_screen.dart';
+import '../../presentation/screens/hospital/profile_onboard/hospital_profile_complete_screen.dart';
+import '../../presentation/screens/hospital/profile_onboard/hospital_set_profile_screen.dart';
+import '../../presentation/screens/hospital/profile_onboard/notification_hospital_screen.dart';
+import '../../presentation/screens/patient/profile_onboard/consent_screen.dart';
+import '../../presentation/screens/patient/profile_onboard/patient_set_profile_screen.dart';
 import '../constants/app_routes.dart';
 
 class AppRouter {
@@ -23,19 +29,53 @@ class AppRouter {
         path: AppRoutes.verifyOtp,
         builder: (context, state) => VerifyAccountScreen(),
       ),
+      GoRoute(
+        path: AppRoutes.setProfilePatient,
+        builder: (context, state) => PatientSetProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.patientConsent,
+        builder: (context, state) => PatientConsentScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.setProfileHospital,
+        builder: (context, state) => HospitalProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.bloodServiceHospital,
+        builder: (context, state) => BloodServicesScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.notificationsHospital,
+        builder: (context, state) => NotificationHospitalScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.hospitalComplete,
+        builder: (context, state) => HospitalSetupCompleteScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.setProfileSpecialist,
+        builder: (context, state) => SpecialistProfileScreen(),
+      ),
+      // GoRoute(
+      //   path: AppRoutes.bloodServiceHospital,
+      //   builder: (context, state) => BloodServicesScreen(),
+      // ),
+      // GoRoute(
+      //   path: AppRoutes.bloodServiceHospital,
+      //   builder: (context, state) => BloodServicesScreen(),
+      // ),
+      // GoRoute(
+      //   path: AppRoutes.bloodServiceHospital,
+      //   builder: (context, state) => BloodServicesScreen(),
+      // ),
+
       // GoRoute(
       //   path: AppRoutes.eduRankPickerPath,
       //   builder: (context, state) {
       //     final viewModel = state.extra as MyProfileProvider;
       //     return EduRankPickerScreen(viewModel: viewModel);
-      //   },
-      // ),
-      // GoRoute(
-      //   path: AppRoutes.myProfilePath,
-      //   // name: myProfilePath,
-      //   builder: (context, state) {
-      //     // String username = state.extra as String? ?? "";
-      //     return MyProfileScreen();
       //   },
       // ),
     ],
