@@ -1,25 +1,47 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
+import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_text.dart';
 import 'package:HealthBridge/presentation/widgets/input_text_field_wg.dart';
 import 'package:flutter/material.dart';
 
-class SpecialistProfileScreen extends StatefulWidget {
-  const SpecialistProfileScreen({super.key});
+import '../../../../../core/constants/app_routes.dart';
+import '../../../../widgets/custom_button.dart';
+
+class SpecialistSetProfileScreen extends StatefulWidget {
+  const SpecialistSetProfileScreen({super.key});
 
   @override
-  State<SpecialistProfileScreen> createState() =>
-      _SpecialistProfileScreenState();
+  State<SpecialistSetProfileScreen> createState() =>
+      _SpecialistSetProfileScreenState();
 }
 
-class _SpecialistProfileScreenState extends State<SpecialistProfileScreen> {
+class _SpecialistSetProfileScreenState
+    extends State<SpecialistSetProfileScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController bioController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController altPhoneController = TextEditingController();
   int? selectedYears;
   String? selectedLanguage;
+  String? selectedCountry;
+
+  final languages = [
+    'English',
+    'French',
+    'Spanish',
+    'German',
+    'Arabic',
+  ];
+
+  final countries = [
+    'Nigeria',
+    'Ghana',
+    'Canada',
+    'USA',
+    'Uganda',
+  ];
 
   final List<String> specialties = [
     'Cardiology',
@@ -209,7 +231,7 @@ class _SpecialistProfileScreenState extends State<SpecialistProfileScreen> {
 
             /// Languages
             _label('Languages Spoken'),
-            _dropdownLanguage(
+            _dropdownItems(
               hint: 'Select Language',
               value: selectedLanguage,
               onChanged: (val) {
@@ -217,11 +239,77 @@ class _SpecialistProfileScreenState extends State<SpecialistProfileScreen> {
                   selectedLanguage = val;
                 });
               },
+              listItem: languages,
             ),
             TextButton.icon(
               onPressed: () {},
               icon: const Icon(Icons.add),
               label: const Text('Add Another Language'),
+            ),
+            const SizedBox(height: 24),
+
+            /// country of service
+            _label('Country of Service'),
+            _dropdownItems(
+              hint: 'Select Country',
+              value: selectedLanguage,
+              onChanged: (val) {
+                setState(() {
+                  selectedLanguage = val;
+                });
+              },
+              listItem: countries,
+            ),
+
+            const SizedBox(height: 8),
+
+            _label('Upload License or Accreditation Document'),
+            const SizedBox(height: 5),
+            _uploadBox(),
+
+            const SizedBox(height: 8),
+            const Text(
+              'Max file size: 5MB',
+              style: TextStyle(fontSize: 12, color: AppColors.textGray),
+            ),
+
+            const SizedBox(height: 32),
+
+            /// Buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      context.goNextScreen(AppRoutes.availabilitySpecialist);
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      side: BorderSide.none,
+                      backgroundColor: const Color(0xFFF5F5F5),
+                    ),
+                    child: const Text(
+                      'Save & Finish later',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: CustomButton(
+                    onPressed: () {
+                      // TODO: Save profile to api before going to next screen
+                      context.goNextScreen(AppRoutes.availabilitySpecialist);
+                    },
+                    text: "Continue",
+                    // shouldProceed: true,
+                    // showLoading: false,
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 32),
@@ -280,19 +368,12 @@ class _SpecialistProfileScreenState extends State<SpecialistProfileScreen> {
     );
   }
 
-  Widget _dropdownLanguage({
+  Widget _dropdownItems({
     required String hint,
+    required List<String> listItem,
     required String? value,
     required ValueChanged<String?> onChanged,
   }) {
-    final languages = [
-      'English',
-      'French',
-      'Spanish',
-      'German',
-      'Arabic',
-    ];
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       height: 50,
@@ -309,7 +390,7 @@ class _SpecialistProfileScreenState extends State<SpecialistProfileScreen> {
           ),
           icon: const Icon(Icons.keyboard_arrow_down),
           isExpanded: true,
-          items: languages
+          items: listItem
               .map(
                 (lang) => DropdownMenuItem<String>(
                   value: lang,
@@ -319,6 +400,32 @@ class _SpecialistProfileScreenState extends State<SpecialistProfileScreen> {
               .toList(),
           onChanged: onChanged,
         ),
+      ),
+    );
+  }
+
+  Widget _uploadBox() {
+    return Container(
+      width: double.infinity,
+      height: 120,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          style: BorderStyle.solid,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.image_outlined, size: 32, color: Color(0xFF6B7280)),
+          SizedBox(height: 8),
+          Text(
+            'Tap to upload PDF, JPG, PNG',
+            style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+          ),
+        ],
       ),
     );
   }

@@ -19,6 +19,7 @@ class AppRoutes {
   static const String setProfileSpecialist = '/set-profile-specialist';
   static const String patientConsent = '/patient_consent';
   static const String hospitalComplete = '/hospital-complete-profile';
+  static const String availabilitySpecialist = '/availability-specialist';
 
   // blood services
   static const String bloodServiceHospital = '/blood-service-hospital';
@@ -33,7 +34,8 @@ class AppRoutes {
   static const String dashboardDonor = '/dashboard-donor';
   static const String dashboardSpecialist = '/dashboard-specialist';
 
-  // Payment
-  static const String addPaymentMethod = '/add-payment-method';
-  static const String billingManagement = '/billing-management';
+  // Specialist
+  static const String specialistRootScreen = '/specialist-root-home';
+  static const String patientProfileOnSpecialist =
+      '/patient-profileOn-specialist';
 }
