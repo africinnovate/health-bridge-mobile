@@ -1,18 +1,30 @@
+import 'package:HealthBridge/core/constants/app_colors.dart';
+import 'package:HealthBridge/core/constants/app_constants.dart';
+import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
+import 'package:HealthBridge/presentation/widgets/medical_info_card.dart';
 import 'package:flutter/material.dart';
 
-class AppointmentDetailScreen extends StatelessWidget {
-  const AppointmentDetailScreen({super.key});
+import '../../../../core/constants/app_routes.dart';
 
-  static const grayBg = Color(0xFFF5F5F5);
+class AppointmentDetailScreen extends StatefulWidget {
+  final String? comingFrom;
+  const AppointmentDetailScreen({super.key, required this.comingFrom});
 
+  @override
+  State<AppointmentDetailScreen> createState() =>
+      _AppointmentDetailScreenState();
+}
+
+class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: grayBg,
+      backgroundColor: AppColors.backgroundGray,
+      appBar: CustomAppBar(title: "Appointment Details"),
       body: SafeArea(
         child: Column(
           children: [
-            _header(context),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
@@ -24,58 +36,42 @@ class AppointmentDetailScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     _symptomsCard(),
                     const SizedBox(height: 20),
-                    _primaryButton('Start Consultation', Colors.green),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _secondaryButton('Re-Schedule'),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _secondaryButton('View profile'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _dangerButton('Cancel Appointment'),
+
+                    /// choose
+                    if (widget.comingFrom ==
+                        AppConstants.appointmentRequest) ...[
+                      _primaryButton('Start Consultation', AppColors.green),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _secondaryButton(
+                                'Re-Schedule',
+                                () => context.goNextScreen(
+                                    AppRoutes.rescheduleOnSpecialist)),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _secondaryButton(
+                                'View profile',
+                                () => context.goNextScreen(
+                                    AppRoutes.patientProfileOnSpecialist)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _dangerButton('Cancel Appointment'),
+                    ],
+
+                    widget.comingFrom == AppConstants.upcomingAppointment
+                        ? MedicalInfoCard()
+                        : SizedBox.shrink(),
                   ],
                 ),
               ),
             )
           ],
         ),
-      ),
-    );
-  }
-
-  /// --------------------------------------------------
-  /// Header
-  /// --------------------------------------------------
-  Widget _header(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          InkWell(
-            onTap: () => Navigator.pop(context),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.arrow_back),
-            ),
-          ),
-          const SizedBox(width: 16),
-          const Text(
-            'Appointment Details',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          )
-        ],
       ),
     );
   }
@@ -90,7 +86,7 @@ class AppointmentDetailScreen extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            width: 110,
+            width: double.infinity,
             height: 110,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
@@ -100,7 +96,7 @@ class AppointmentDetailScreen extends StatelessWidget {
             ),
             child: const CircleAvatar(
               radius: 50,
-              backgroundImage: AssetImage('assets/patient.png'),
+              backgroundImage: AssetImage('assets/images/patient.png'),
               backgroundColor: Colors.transparent,
             ),
           ),
@@ -231,16 +227,19 @@ class AppointmentDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _secondaryButton(String text) {
-    return Container(
-      height: 48,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade300),
+  Widget _secondaryButton(String text, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 48,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
+        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w500)),
       ),
-      child: Text(text, style: const TextStyle(fontWeight: FontWeight.w500)),
     );
   }
 
@@ -253,8 +252,8 @@ class AppointmentDetailScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
       ),
       child: Text(text,
-          style:
-              const TextStyle(color: Colors.red, fontWeight: FontWeight.w500)),
+          style: const TextStyle(
+              color: AppColors.red, fontWeight: FontWeight.w500)),
     );
   }
 
@@ -271,11 +270,11 @@ class AppointmentDetailScreen extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: const [
-          Icon(Icons.videocam, size: 14, color: Colors.green),
+          Icon(Icons.videocam, size: 14, color: AppColors.green),
           SizedBox(width: 6),
           Text('Video Call',
-              style:
-                  TextStyle(color: Colors.green, fontWeight: FontWeight.w500)),
+              style: TextStyle(
+                  color: AppColors.green, fontWeight: FontWeight.w500)),
         ],
       ),
     );

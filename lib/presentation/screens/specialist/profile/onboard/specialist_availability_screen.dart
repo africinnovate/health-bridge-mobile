@@ -1,4 +1,11 @@
+import 'package:HealthBridge/core/constants/app_colors.dart';
+import 'package:HealthBridge/core/constants/app_routes.dart';
+import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
+import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+
+import '../../../../widgets/cancel_button.dart';
 
 class SpecialistAvailabilityScreen extends StatefulWidget {
   const SpecialistAvailabilityScreen({super.key});
@@ -17,15 +24,8 @@ class _SpecialistAvailabilityScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      backgroundColor: AppColors.backgroundGray,
+      appBar: CustomAppBar(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
@@ -118,40 +118,16 @@ class _SpecialistAvailabilityScreenState
             const SizedBox(height: 28),
 
             /// Actions
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB00000),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('Save Schedule',
-                    style: TextStyle(color: Colors.white)),
-              ),
+            CustomButton(
+              onPressed: () {
+                context.goNextScreen(AppRoutes.specialistRootScreen);
+              },
+              text: "Save Schedule",
             ),
 
             const SizedBox(height: 12),
 
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: OutlinedButton(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFDECEC),
-                  side: BorderSide.none,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child:
-                    const Text('Cancel', style: TextStyle(color: Colors.red)),
-              ),
-            ),
+            CancelButton(),
 
             const SizedBox(height: 24),
           ],
@@ -175,15 +151,15 @@ class _SpecialistAvailabilityScreenState
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFFDECEC) : Colors.white,
+          color: selected ? AppColors.transRed10 : Colors.white,
           border: Border.all(
-              color: selected ? Colors.red : const Color(0xFFE5E7EB)),
+              color: selected ? AppColors.red : const Color(0xFFE5E7EB)),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Text(
           text,
           style: TextStyle(
-            color: selected ? Colors.red : Colors.black,
+            color: selected ? AppColors.red : Colors.black,
             fontWeight: FontWeight.w500,
           ),
         ),

@@ -3,9 +3,9 @@ import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_routes.dart';
-import '../../../widgets/custom_button.dart';
-import '../../../widgets/input_text_field_wg.dart';
+import '../../../../../core/constants/app_routes.dart';
+import '../../../../widgets/custom_button.dart';
+import '../../../../widgets/input_text_field_wg.dart';
 
 class HospitalProfileScreen extends StatefulWidget {
   const HospitalProfileScreen({super.key});

@@ -9,6 +9,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onBack;
   final Color? backgroundColor;
   final Color? titleColor;
+  final bool showArrow;
   final List<Widget>? actions;
 
   const CustomAppBar({
@@ -18,6 +19,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.backgroundColor,
     this.titleColor,
     this.actions,
+    this.showArrow = true,
   });
 
   @override
@@ -25,11 +27,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: backgroundColor ?? AppColors.white,
       elevation: 0,
-      leading: IconButton(
-        icon: Icon(Platform.isAndroid ? Icons.arrow_back : Icons.arrow_back_ios,
-            color: titleColor ?? AppColors.textPrimary),
-        onPressed: onBack ?? () => context.goBack(),
-      ),
+      leading: showArrow
+          ? IconButton(
+              icon: Icon(
+                  Platform.isAndroid ? Icons.arrow_back : Icons.arrow_back_ios,
+                  color: titleColor ?? AppColors.textPrimary),
+              onPressed: onBack ?? () => context.goBack(),
+            )
+          : null,
       title: Text(
         title ?? "",
         style: TextStyle(

@@ -49,9 +49,8 @@ class AppConstants {
   static const int otpLength = 4;
   static const int otpResendDelay = 60; // seconds
   //
-  // // Phone Number
-  // static const String defaultCountryCode = 'US';
-  // static const List<String> supportedCountries = ['US', 'NG', 'FR'];
+  static const String appointmentRequest = "appointmentRequest";
+  static const String upcomingAppointment = "upcomingAppointment";
 
   // Validation
   static const int minPasswordLength = 8;

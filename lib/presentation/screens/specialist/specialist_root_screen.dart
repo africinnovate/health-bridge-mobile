@@ -1,3 +1,4 @@
+import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/presentation/screens/specialist/profile/specialist_profile_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -17,9 +18,9 @@ class _SpecialistRootScreenState extends State<SpecialistRootScreen> {
 
   final _screens = const [
     SpecialistHomeScreen(),
-    SpecialistAppointmentsScreen(),
-    AppointmentRequestsScreen(),
-    SpecialistProfileScreen(),
+    SpecialistAppointmentsScreen(showArrow: false),
+    AppointmentRequestsScreen(showBackArrow: false),
+    SpecialistProfileScreen(showBackArrow: false),
   ];
 
   @override
@@ -27,9 +28,21 @@ class _SpecialistRootScreenState extends State<SpecialistRootScreen> {
     return Scaffold(
       body: _screens[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: AppColors.background,
         currentIndex: _currentIndex,
-        selectedItemColor: Colors.red,
+        selectedItemColor: AppColors.red,
         unselectedItemColor: Colors.grey,
+        type: BottomNavigationBarType.fixed, // important for text to show
+        showUnselectedLabels: true, // <— make sure unselected text shows
+        showSelectedLabels: true,
+        selectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.normal,
+          fontSize: 10,
+        ),
         onTap: (index) {
           setState(() => _currentIndex = index);
         },

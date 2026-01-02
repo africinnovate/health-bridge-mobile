@@ -1,9 +1,7 @@
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
-
-import '../../../../core/utils/dialog.dart';
-import '../../../widgets/thank_you_dialog.dart';
+import '../../../../../core/utils/dialog.dart';
 
 class PatientConsentScreen extends StatefulWidget {
   const PatientConsentScreen({super.key});

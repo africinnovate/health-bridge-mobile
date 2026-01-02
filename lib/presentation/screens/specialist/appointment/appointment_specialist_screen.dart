@@ -1,9 +1,13 @@
+import 'package:HealthBridge/core/constants/app_colors.dart';
+import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 
 import '../../../widgets/appointment_card.dart';
 
 class SpecialistAppointmentsScreen extends StatefulWidget {
-  const SpecialistAppointmentsScreen({super.key});
+  final bool? showArrow;
+
+  const SpecialistAppointmentsScreen({super.key, this.showArrow});
 
   @override
   State<SpecialistAppointmentsScreen> createState() =>
@@ -17,11 +21,13 @@ class _SpecialistAppointmentsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: CustomAppBar(
+          title: "Appointments", showArrow: widget.showArrow ?? false),
+      backgroundColor: AppColors.backgroundGray,
       body: SafeArea(
         child: Column(
           children: [
-            _header(),
+            SizedBox(height: 10),
             _tabs(),
             Expanded(
               child: ListView.separated(
@@ -41,24 +47,10 @@ class _SpecialistAppointmentsScreenState
     );
   }
 
-  /// --------------------------------------------------
-  Widget _header() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          'Appointments',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
-  }
-
   Widget _tabs() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
@@ -80,9 +72,9 @@ class _SpecialistAppointmentsScreenState
       child: GestureDetector(
         onTap: () => setState(() => selectedTab = index),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 15),
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFFB00000) : Colors.transparent,
+            color: selected ? AppColors.red : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
           alignment: Alignment.center,
@@ -90,7 +82,6 @@ class _SpecialistAppointmentsScreenState
             text,
             style: TextStyle(
               color: selected ? Colors.white : Colors.black,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ),

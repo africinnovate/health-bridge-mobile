@@ -1,6 +1,7 @@
 import '../constants/app_constants.dart';
 
 class Validators {
+  static String role = "patient";
   // Email validation
   static String? validateEmail(String? value) {
     if (value == null || value.isEmpty) {

@@ -12,7 +12,7 @@ class AuthApi {
   Future<ResponseStatusM> registerUser(RegisterModel registerModel) async {
     final response = await apiClient.post(
       AppConstants.registerEndpoint,
-      data: registerModel,
+      data: registerModel.toJson(),
     );
 
     return ResponseUtils.getApiResponse(response);

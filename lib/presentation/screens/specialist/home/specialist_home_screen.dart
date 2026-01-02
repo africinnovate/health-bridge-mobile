@@ -1,98 +1,250 @@
+import 'package:HealthBridge/core/constants/app_colors.dart';
+import 'package:HealthBridge/core/constants/app_constants.dart';
+import 'package:HealthBridge/core/constants/app_routes.dart';
+import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/presentation/widgets/upcoming_appointment_card.dart';
 import 'package:flutter/material.dart';
 
-class SpecialistHomeScreen extends StatelessWidget {
+import '../../../../core/utils/dialog.dart';
+
+class SpecialistHomeScreen extends StatefulWidget {
   const SpecialistHomeScreen({super.key});
 
   @override
+  State<SpecialistHomeScreen> createState() => _SpecialistHomeScreenState();
+
+  static Widget _filledButton(String text, Color color,
+      {required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+            color: color, borderRadius: BorderRadius.circular(10)),
+        child: Text(text,
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.w500)),
+      ),
+    );
+  }
+
+  static Widget _outlinedButton(String text, Color bg, Color textColor,
+      {required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: textColor),
+        ),
+        child: Text(text,
+            style: TextStyle(color: textColor, fontWeight: FontWeight.w500)),
+      ),
+    );
+  }
+}
+
+class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      // bottomNavigationBar: _bottomNav(),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 16),
-
-              /// Header
-              Row(
-                children: [
-                  const CircleAvatar(
+      backgroundColor: AppColors.backgroundGray,
+      body: Column(
+        children: [
+          /// FIXED HEADER
+          Container(
+            color: Colors.white,
+            padding:
+                const EdgeInsets.only(left: 20, right: 20, bottom: 16, top: 35),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    context.goNextScreenWithData(
+                      AppRoutes.specialistProfile,
+                      extra: true,
+                    );
+                  },
+                  child: const CircleAvatar(
                     radius: 22,
-                    backgroundImage: AssetImage('assets/avatar.png'),
+                    backgroundImage: AssetImage('assets/images/patient.png'),
                   ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text('Hello, Dr Martins',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600)),
-                      SizedBox(height: 2),
-                      Text('Your schedule at a glance.',
-                          style: TextStyle(
-                              fontSize: 13, color: Color(0xFF6B7280))),
-                    ],
-                  ),
-                  const Spacer(),
-                  Stack(
-                    children: [
-                      Icon(Icons.notifications_none, size: 26),
-                      Positioned(
-                        right: 2,
-                        top: 2,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                              color: Colors.red, shape: BoxShape.circle),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Hello, Dr Martins',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    // SizedBox(height: 2),
+                    Text(
+                      'Your schedule at a glance.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Stack(
+                  children: [
+                    const Icon(Icons.notifications_none, size: 26),
+                    Positioned(
+                      right: 2,
+                      top: 2,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AppColors.red,
+                          shape: BoxShape.circle,
                         ),
-                      )
-                    ],
-                  )
+                      ),
+                    )
+                  ],
+                )
+              ],
+            ),
+          ),
+
+          /// 📜 SCROLLABLE CONTENT
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 24),
+                  _sectionTitle('Next Appointment'),
+                  _nextAppointmentCard(),
+                  const SizedBox(height: 24),
+                  _sectionHeader('Appointment Requests',
+                      onPress: () => context.goNextScreenWithData(
+                            AppRoutes.specialistRequestScreen,
+                            extra: true,
+                          )),
+                  _requestCard(),
+                  _requestCard(),
+                  const SizedBox(height: 24),
+                  _sectionHeader('Upcoming Appointments',
+                      onPress: () => context.goNextScreenWithData(
+                          AppRoutes.appointmentTapOnSpecialist,
+                          extra: true)),
+
+                  /// use 3 static cards (make on listview later)
+                  UpcomingAppointmentCard(
+                    patientName: 'James Adebayo',
+                    appointmentInfo: 'Video Call • Tomorrow, 2:00 PM',
+                    avatar: const AssetImage('assets/images/patient.png'),
+                    onTap: () {
+                      context.goNextScreenWithData(
+                          AppRoutes.specialistAppointDetailScreen,
+                          extra: AppConstants.upcomingAppointment);
+                    },
+                    onReschedule: () {
+                      context.goNextScreen(AppRoutes.rescheduleOnSpecialist);
+                    },
+                    onCancel: () {
+                      showConfirmDialog(
+                        context,
+                        title: 'Cancel Appointment?',
+                        message:
+                            'Are you sure you want to cancel this appointment? You won’t be able to undo this action.',
+                        confirmText: 'Yes, Cancel Appointment',
+                        cancelText: 'Keep Appointment',
+                        icon: Icons.question_mark,
+                        onConfirm: () {
+                          SnackBarUtils.showInfo(context, "In progress");
+                        },
+                      );
+                    },
+                  ),
+
+                  UpcomingAppointmentCard(
+                    patientName: 'James Adebayo',
+                    appointmentInfo: 'Video Call • Tomorrow, 2:00 PM',
+                    avatar: const AssetImage('assets/images/patient.png'),
+                    onTap: () {
+                      context.goNextScreenWithData(
+                          AppRoutes.specialistAppointDetailScreen,
+                          extra: AppConstants.upcomingAppointment);
+                    },
+                    onReschedule: () {
+                      context.goNextScreen(AppRoutes.rescheduleOnSpecialist);
+                    },
+                    onCancel: () {
+                      showConfirmDialog(
+                        context,
+                        title: 'Cancel Appointment?',
+                        message:
+                            'Are you sure you want to cancel this appointment? You won’t be able to undo this action.',
+                        confirmText: 'Yes, Cancel Appointment',
+                        cancelText: 'Keep Appointment',
+                        icon: Icons.question_mark,
+                        onConfirm: () {
+                          SnackBarUtils.showInfo(context, "In progress");
+                        },
+                      );
+                    },
+                  ),
+                  UpcomingAppointmentCard(
+                    patientName: 'James Adebayo',
+                    appointmentInfo: 'Video Call • Tomorrow, 2:00 PM',
+                    avatar: const AssetImage('assets/images/patient.png'),
+                    onTap: () {
+                      context.goNextScreenWithData(
+                          AppRoutes.specialistAppointDetailScreen,
+                          extra: AppConstants.upcomingAppointment);
+                    },
+                    onReschedule: () {
+                      context.goNextScreen(AppRoutes.rescheduleOnSpecialist);
+                    },
+                    onCancel: () {
+                      showConfirmDialog(
+                        context,
+                        title: 'Cancel Appointment?',
+                        message:
+                            'Are you sure you want to cancel this appointment? You won’t be able to undo this action.',
+                        confirmText: 'Yes, Cancel Appointment',
+                        cancelText: 'Keep Appointment',
+                        icon: Icons.question_mark,
+                        onConfirm: () {
+                          SnackBarUtils.showInfo(context, "In progress");
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  _sectionTitle('Recent Activity'),
+                  _activityItem(
+                    icon: Icons.check_circle,
+                    color: AppColors.green,
+                    title: 'Consultation completed with Adaobi',
+                    time: '2 hours ago',
+                  ),
+                  _activityItem(
+                    icon: Icons.warning_amber_rounded,
+                    color: Colors.orange,
+                    title: 'Missed appointment marked for James',
+                    time: '2 hours ago',
+                  ),
+                  const SizedBox(height: 40),
                 ],
               ),
-
-              const SizedBox(height: 24),
-
-              _sectionTitle('Next Appointment'),
-              _nextAppointmentCard(),
-
-              const SizedBox(height: 24),
-
-              _sectionHeader('Appointment Requests'),
-              _requestCard(),
-              _requestCard(),
-
-              const SizedBox(height: 24),
-
-              _sectionHeader('Upcoming Appointments'),
-              _upcomingCard(),
-              _upcomingCard(),
-              _upcomingCard(),
-
-              const SizedBox(height: 24),
-
-              _sectionTitle('Recent Activity'),
-              _activityItem(
-                icon: Icons.check_circle,
-                color: Colors.green,
-                title: 'Consultation completed with Adaobi',
-                time: '2 hours ago',
-              ),
-              _activityItem(
-                icon: Icons.warning_amber_rounded,
-                color: Colors.orange,
-                title: 'Missed appointment marked for James',
-                time: '2 hours ago',
-              ),
-
-              const SizedBox(height: 40),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -106,13 +258,16 @@ class SpecialistHomeScreen extends StatelessWidget {
         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600));
   }
 
-  Widget _sectionHeader(String title) {
+  Widget _sectionHeader(String title, {required VoidCallback onPress}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         _sectionTitle(title),
-        const Text('View All',
-            style: TextStyle(fontSize: 13, color: Colors.red)),
+        GestureDetector(
+          onTap: onPress,
+          child: const Text('View All',
+              style: TextStyle(fontSize: 13, color: AppColors.red)),
+        ),
       ],
     );
   }
@@ -132,7 +287,7 @@ class SpecialistHomeScreen extends StatelessWidget {
             children: [
               const CircleAvatar(
                 radius: 22,
-                backgroundImage: AssetImage('assets/patient.png'),
+                backgroundImage: AssetImage('assets/images/patient.png'),
               ),
               const SizedBox(width: 12),
               Column(
@@ -170,11 +325,24 @@ class SpecialistHomeScreen extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _outlinedButton('Re-Schedule', Colors.white, Colors.red),
+                child: SpecialistHomeScreen._outlinedButton(
+                  'Re-Schedule',
+                  Colors.white,
+                  AppColors.red,
+                  onTap: () => context.goNextScreen(
+                    AppRoutes.rescheduleOnSpecialist,
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: _filledButton('View Profile', Colors.white24),
+                child: SpecialistHomeScreen._filledButton(
+                  'View Profile',
+                  Colors.white24,
+                  onTap: () {
+                    context.goNextScreen(AppRoutes.patientProfileOnSpecialist);
+                  },
+                ),
               ),
             ],
           )
@@ -184,24 +352,105 @@ class SpecialistHomeScreen extends StatelessWidget {
   }
 
   Widget _requestCard() {
-    return Container(
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(14),
+    return GestureDetector(
+      onTap: () {
+        context.goNextScreenWithData(AppRoutes.specialistAppointDetailScreen,
+            extra: AppConstants.appointmentRequest);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(top: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const CircleAvatar(
+                  backgroundImage: AssetImage('assets/images/patient.png'),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text('James Adebayo',
+                        style: TextStyle(fontWeight: FontWeight.w500)),
+                    SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.videocam, size: 14),
+                        SizedBox(width: 4),
+                        Text('Video Call • Tomorrow, 2:00 PM',
+                            style: TextStyle(fontSize: 12)),
+                      ],
+                    ),
+                  ],
+                )
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: SpecialistHomeScreen._filledButton(
+                    'Confirm',
+                    AppColors.green,
+                    onTap: () {
+                      showThankYouDialog(context,
+                          title: "Appointment confirm",
+                          message:
+                              "The appointment has been confirmed and the user has been notified",
+                          buttonText: "Done", onContinue: () {
+                        context.goNextScreenWithData(
+                            AppRoutes.specialistAppointDetailScreen,
+                            extra: AppConstants.appointmentRequest);
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: SpecialistHomeScreen._outlinedButton(
+                    'Re-schedule',
+                    AppColors.backgroundGray,
+                    AppColors.red,
+                    onTap: () => context.goNextScreen(
+                      AppRoutes.rescheduleOnSpecialist,
+                    ),
+                  ),
+                ),
+              ],
+            )
+          ],
+        ),
       ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const CircleAvatar(
-                backgroundImage: AssetImage('assets/patient.png'),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+    );
+  }
+
+  Widget upcomingCard() {
+    return GestureDetector(
+      onTap: () {
+        context.goNextScreenWithData(AppRoutes.specialistAppointDetailScreen,
+            extra: AppConstants.upcomingAppointment);
+      },
+      child: Container(
+        margin: const EdgeInsets.only(top: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: const [
+                CircleAvatar(
+                  backgroundImage: AssetImage('assets/images/patient.png'),
+                ),
+                SizedBox(width: 12),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text('James Adebayo',
                       style: TextStyle(fontWeight: FontWeight.w500)),
                   SizedBox(height: 4),
@@ -213,61 +462,47 @@ class SpecialistHomeScreen extends StatelessWidget {
                           style: TextStyle(fontSize: 12)),
                     ],
                   ),
-                ],
-              )
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _filledButton('Confirm', Colors.green),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _outlinedButton('Re-schedule', Colors.red, Colors.red),
-              ),
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _upcomingCard() {
-    return Container(
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: const [
-              CircleAvatar(
-                backgroundImage: AssetImage('assets/patient.png'),
-              ),
-              SizedBox(width: 12),
-              Text('James Adebayo',
-                  style: TextStyle(fontWeight: FontWeight.w500)),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _filledButton('Re-Schedule', Colors.red),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _outlinedButton(
-                    'Cancel', const Color(0xFFFDECEC), Colors.red),
-              ),
-            ],
-          )
-        ],
+                ])
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: SpecialistHomeScreen._filledButton(
+                    'Re-Schedule',
+                    AppColors.red,
+                    onTap: () => context.goNextScreen(
+                      AppRoutes.rescheduleOnSpecialist,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: SpecialistHomeScreen._outlinedButton(
+                    'Cancel',
+                    const Color(0xFFFDECEC),
+                    AppColors.red,
+                    onTap: () {
+                      showConfirmDialog(
+                        context,
+                        title: 'Cancel Appointment?',
+                        message:
+                            'Are you sure you want to cancel this appointment? You won’t be able to undo this action.',
+                        confirmText: 'Yes, Cancel Appointment',
+                        cancelText: 'Keep Appointment',
+                        icon: Icons.question_mark,
+                        onConfirm: () {
+                          SnackBarUtils.showInfo(context, "In progress");
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            )
+          ],
+        ),
       ),
     );
   }
@@ -308,47 +543,6 @@ class SpecialistHomeScreen extends StatelessWidget {
           )
         ],
       ),
-    );
-  }
-
-  static Widget _filledButton(String text, Color color) {
-    return Container(
-      height: 44,
-      alignment: Alignment.center,
-      decoration:
-          BoxDecoration(color: color, borderRadius: BorderRadius.circular(10)),
-      child: Text(text,
-          style: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.w500)),
-    );
-  }
-
-  static Widget _outlinedButton(String text, Color bg, Color textColor) {
-    return Container(
-      height: 44,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: textColor),
-      ),
-      child: Text(text,
-          style: TextStyle(color: textColor, fontWeight: FontWeight.w500)),
-    );
-  }
-
-  Widget _bottomNav() {
-    return BottomNavigationBar(
-      currentIndex: 0,
-      selectedItemColor: Colors.red,
-      unselectedItemColor: Colors.grey,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today), label: 'Appointment'),
-        BottomNavigationBarItem(icon: Icon(Icons.inbox), label: 'Requests'),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-      ],
     );
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/core/utils/validators.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
@@ -73,7 +74,17 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
     // TODO: Handle navigation based on verification result and role
     if (!mounted) return;
 
-    context.goNextScreen(AppRoutes.setProfilePatient);
+    if (Validators.role == "donor") {
+      // adjust later | share profile with specialist
+      context.goNextScreen(AppRoutes.donorRootScreen);
+    } else if (Validators.role == "specialist") {
+      context.goNextScreen(AppRoutes.setProfileSpecialist);
+    } else if (Validators.role == "patient") {
+      context.goNextScreen(AppRoutes.setProfilePatient);
+    } else {
+      context.goNextScreen(AppRoutes.setProfileHospital);
+    }
+
     ;
   }
 
@@ -157,12 +168,12 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
                   pinTheme: PinTheme(
                     shape: PinCodeFieldShape.box,
                     borderRadius: BorderRadius.circular(12),
-                    fieldHeight: 56,
-                    fieldWidth: 48,
-                    activeFillColor: AppColors.white,
+                    fieldHeight: 60,
+                    fieldWidth: 60,
+                    activeFillColor: AppColors.backgroundGray,
                     inactiveFillColor: AppColors.white,
-                    selectedFillColor: AppColors.white,
-                    activeColor: AppColors.red,
+                    selectedFillColor: AppColors.transRed10,
+                    activeColor: AppColors.backgroundGray,
                     inactiveColor: AppColors.border,
                     selectedColor: AppColors.red,
                   ),

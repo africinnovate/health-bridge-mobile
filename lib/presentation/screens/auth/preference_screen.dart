@@ -1,5 +1,6 @@
 import 'package:HealthBridge/core/constants/app_routes.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/core/utils/validators.dart';
 import 'package:HealthBridge/presentation/providers/auth_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
@@ -21,7 +22,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: CustomAppBar(),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,6 +71,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               value: 'donor',
               groupValue: selectedRole,
               onChanged: (value) {
+                Validators.role = value;
                 setState(() => selectedRole = value);
               },
             ),
@@ -83,6 +85,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               value: 'specialist',
               groupValue: selectedRole,
               onChanged: (value) {
+                Validators.role = value;
                 setState(() => selectedRole = value);
               },
             ),
@@ -96,11 +99,12 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               value: 'hospital',
               groupValue: selectedRole,
               onChanged: (value) {
+                Validators.role = value;
                 setState(() => selectedRole = value);
               },
             ),
 
-            const Spacer(),
+            const SizedBox(height: 32),
 
             /// Continue Button
             CustomButton(

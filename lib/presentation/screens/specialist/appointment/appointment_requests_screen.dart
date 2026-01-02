@@ -1,16 +1,35 @@
+import 'package:HealthBridge/core/constants/app_colors.dart';
+import 'package:HealthBridge/core/constants/app_constants.dart';
+import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/core/utils/dialog.dart';
+import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 
-class AppointmentRequestsScreen extends StatelessWidget {
-  const AppointmentRequestsScreen({super.key});
+import '../../../../core/constants/app_routes.dart';
+
+class AppointmentRequestsScreen extends StatefulWidget {
+  final bool? showBackArrow;
+
+  const AppointmentRequestsScreen({super.key, this.showBackArrow});
 
   @override
+  State<AppointmentRequestsScreen> createState() =>
+      _AppointmentRequestsScreenState();
+}
+
+class _AppointmentRequestsScreenState extends State<AppointmentRequestsScreen> {
+  @override
   Widget build(BuildContext context) {
+    print("What is show arrow ${widget.showBackArrow}");
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      appBar: CustomAppBar(
+        title: 'Appointment Requests',
+        showArrow: widget.showBackArrow ?? false,
+      ),
+      backgroundColor: AppColors.backgroundGray,
       body: SafeArea(
         child: Column(
           children: [
-            _header(context),
             Expanded(
               child: ListView.separated(
                 padding: const EdgeInsets.all(20),
@@ -25,37 +44,6 @@ class AppointmentRequestsScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /// --------------------------------------------------
-  /// Header
-  /// --------------------------------------------------
-  Widget _header(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          InkWell(
-            onTap: () => Navigator.pop(context),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.arrow_back),
-            ),
-          ),
-          const SizedBox(width: 16),
-          const Text(
-            'Appointment Requests',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          )
-        ],
       ),
     );
   }
@@ -74,23 +62,29 @@ class AppointmentRequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _headerRow(),
-          const SizedBox(height: 12),
-          _metaRow(),
-          const SizedBox(height: 12),
-          _symptomPreview(),
-          const SizedBox(height: 16),
-          _actions(),
-        ],
+    return GestureDetector(
+      onTap: () {
+        context.goNextScreenWithData(AppRoutes.specialistAppointDetailScreen,
+            extra: AppConstants.appointmentRequest);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _headerRow(),
+            const SizedBox(height: 12),
+            _metaRow(),
+            const SizedBox(height: 12),
+            _symptomPreview(),
+            const SizedBox(height: 16),
+            _actions(context),
+          ],
+        ),
       ),
     );
   }
@@ -101,7 +95,7 @@ class AppointmentRequestCard extends StatelessWidget {
       children: [
         const CircleAvatar(
           radius: 22,
-          backgroundImage: AssetImage('assets/patient.png'),
+          backgroundImage: AssetImage('assets/images/patient.png'),
         ),
         const SizedBox(width: 12),
         const Expanded(
@@ -149,52 +143,71 @@ class AppointmentRequestCard extends StatelessWidget {
     );
   }
 
-  Widget _actions() {
+  Widget _actions(BuildContext context) {
     return Row(
       children: [
         Expanded(
-          child: _confirmButton(),
+          child: _confirmButton(context),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _rescheduleButton(),
+          child: _rescheduleButton(
+            onTap: () => context.goNextScreen(
+              AppRoutes.rescheduleOnSpecialist,
+            ),
+          ),
         ),
       ],
     );
   }
 
-  Widget _confirmButton() {
-    return Container(
-      height: 44,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: const Color(0xFF15803D),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Text(
-        'Confirm',
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
+  Widget _confirmButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        showThankYouDialog(context,
+            title: "Appointment confirm",
+            message:
+                "The appointment has been confirmed and the user has been notified",
+            buttonText: "Done", onContinue: () {
+          context.goNextScreenWithData(AppRoutes.specialistAppointDetailScreen,
+              extra: AppConstants.appointmentRequest);
+        });
+      },
+      child: Container(
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: const Color(0xFF15803D),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Text(
+          'Confirm',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
   }
 
-  Widget _rescheduleButton() {
-    return Container(
-      height: 44,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: const Text(
-        'Re-schedule',
-        style: TextStyle(
-          color: Colors.red,
-          fontWeight: FontWeight.w500,
+  Widget _rescheduleButton({required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: const Text(
+          'Re-schedule',
+          style: TextStyle(
+            color: AppColors.red,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
     );

@@ -438,7 +438,7 @@ class _SpecialistSetProfileScreenState
         child: Container(
           height: 44,
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFFD32F2F) : Colors.transparent,
+            color: selected ? AppColors.red : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: selected ? Colors.transparent : const Color(0xFFE5E7EB),

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   // Primary colors (Green from the design)
-  // static const Color primary = Color(0xFF03C068);
-  // static const Color primaryDark = Color(0xFF00B856);
-  static const Color green = Color(0xFF10B981);
+  static const Color blue = Color(0xFF007DE3);
+  static const Color green = Color(0xFF16801A);
   static const Color red = Color(0xFFB00000);
+  static const Color transRed10 = Color(0x1AB60000);
   static const Color textGray = Color(0xFF6B7280);
   static const Color backgroundGray = Color(0xFFF5F5F5);
   static const Color background = Color(0xFFFFFFFF);
@@ -33,5 +33,5 @@ class AppColors {
 
   // Overlay colors
   static const Color overlay = Color(0x80000000);
-  static const Color disabled = Color(0xFFBDBDBD);
+  static const Color aPlusAndABPlus = Color(0xFF51528C);
 }

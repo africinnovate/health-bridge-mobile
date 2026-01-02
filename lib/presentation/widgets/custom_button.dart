@@ -28,7 +28,7 @@ class CustomButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         padding: shouldFullScreen == true
             ? null
-            : const EdgeInsets.symmetric(horizontal: 150, vertical: 10),
+            : const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         minimumSize:
             shouldFullScreen == true ? const Size(double.infinity, 48) : null,
         backgroundColor: color ?? AppColors.red,
@@ -48,7 +48,7 @@ class CustomButton extends StatelessWidget {
             )
           : CustomText(
               text: text,
-              size: 18,
+              size: 17,
               color: AppColors.white,
             ),
     );

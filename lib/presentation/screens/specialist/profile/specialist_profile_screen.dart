@@ -1,20 +1,24 @@
+import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
+import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_routes.dart';
+import '../../../../core/utils/dialog.dart';
+
 class SpecialistProfileScreen extends StatelessWidget {
-  const SpecialistProfileScreen({super.key});
+  final bool? showBackArrow;
+  const SpecialistProfileScreen({super.key, required this.showBackArrow});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        title: const Text(
-          'My Profile',
-          style: TextStyle(color: Colors.black),
-        ),
-        centerTitle: false,
+      appBar: CustomAppBar(
+        title: "My Profile",
+        showArrow: showBackArrow ?? false,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -22,9 +26,9 @@ class SpecialistProfileScreen extends StatelessWidget {
           children: [
             _profileHeader(),
             const SizedBox(height: 16),
-            _personalInformation(),
+            _personalInformation(context),
             const SizedBox(height: 16),
-            _professionalInformation(),
+            _professionalInformation(context),
             const SizedBox(height: 16),
             _consultationTypes(),
             const SizedBox(height: 16),
@@ -32,11 +36,25 @@ class SpecialistProfileScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _accountSection(),
             const SizedBox(height: 24),
-            _logoutButton(),
+            CustomButton(onPressed: () => logout(context), text: "Log Out"),
             const SizedBox(height: 80),
           ],
         ),
       ),
+    );
+  }
+
+  void logout(BuildContext context) {
+    showConfirmDialog(
+      context,
+      title: 'Log out?',
+      message: 'You will need to login again.',
+      confirmText: 'Log out',
+      cancelText: 'Stay',
+      icon: Icons.logout,
+      onConfirm: () {
+        SnackBarUtils.showInfo(context, "In progress");
+      },
     );
   }
 
@@ -49,7 +67,7 @@ class SpecialistProfileScreen extends StatelessWidget {
             children: [
               const CircleAvatar(
                 radius: 52,
-                backgroundImage: AssetImage('assets/images/doctor.png'),
+                backgroundImage: AssetImage('assets/images/patient.png'),
               ),
               Positioned(
                 bottom: 0,
@@ -81,7 +99,7 @@ class SpecialistProfileScreen extends StatelessWidget {
             ),
             child: const Text(
               'Cardiology',
-              style: TextStyle(color: Colors.green, fontSize: 12),
+              style: TextStyle(color: AppColors.green, fontSize: 12),
             ),
           ),
           const SizedBox(height: 6),
@@ -95,10 +113,12 @@ class SpecialistProfileScreen extends StatelessWidget {
   }
 
   /// ---------------- Personal Info ----------------
-  Widget _personalInformation() {
+  Widget _personalInformation(BuildContext context) {
     return _infoSection(
       title: 'Personal Information',
-      onEdit: () {},
+      onEdit: () {
+        context.goNextScreen(AppRoutes.editPersonalSpecialist);
+      },
       children: const [
         _InfoRow(Icons.email, 'Email Address', 'Sarahoknkwo@gmail.com'),
         _InfoRow(Icons.call, 'Phone Number', '+2348023476400'),
@@ -111,10 +131,12 @@ class SpecialistProfileScreen extends StatelessWidget {
   }
 
   /// ---------------- Professional Info ----------------
-  Widget _professionalInformation() {
+  Widget _professionalInformation(BuildContext context) {
     return _infoSection(
       title: 'Professional Information',
-      onEdit: () {},
+      onEdit: () {
+        SnackBarUtils.showInfo(context, "In progress");
+      },
       children: const [
         _ChipRow('Specialties', ['Cardiology']),
         _InfoRow(Icons.work, 'Years of Experience', '12+ years'),
@@ -171,26 +193,6 @@ class SpecialistProfileScreen extends StatelessWidget {
           _accountTile(Icons.language, 'Language', trailing: 'English'),
           _accountTile(Icons.privacy_tip, 'Privacy Policy'),
         ],
-      ),
-    );
-  }
-
-  /// ---------------- Logout ----------------
-  Widget _logoutButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFD32F2F),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-        onPressed: () {},
-        child: const Text(
-          'Log Out',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
       ),
     );
   }

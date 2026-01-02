@@ -20,7 +20,7 @@ class ApiClient {
   // ---------- POST ----------
   Future<http.Response> post(
     String endpoint, {
-    dynamic data,
+    Map<String, dynamic>? data,
     Map<String, String>? query,
     Map<String, String>? headers,
   }) async {
@@ -36,7 +36,7 @@ class ApiClient {
   // ---------- PUT ----------
   Future<http.Response> put(
     String endpoint, {
-    dynamic data,
+    Map<String, dynamic>? data,
     Map<String, String>? query,
     Map<String, String>? headers,
   }) async {
@@ -52,7 +52,7 @@ class ApiClient {
   // ---------- PATCH ----------
   Future<http.Response> patch(
     String endpoint, {
-    dynamic data,
+    Map<String, dynamic>? data,
     Map<String, String>? query,
     Map<String, String>? headers,
   }) async {
@@ -68,7 +68,7 @@ class ApiClient {
   // ---------- DELETE ----------
   Future<http.Response> delete(
     String endpoint, {
-    dynamic data,
+    Map<String, dynamic>? data,
     Map<String, String>? query,
     Map<String, String>? headers,
   }) async {
@@ -86,6 +86,7 @@ class ApiClient {
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      // 'Authorization': 'Bearer $token',
     };
   }
 }

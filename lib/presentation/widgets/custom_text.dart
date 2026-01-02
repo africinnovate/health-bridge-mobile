@@ -36,9 +36,9 @@ class CustomText extends StatelessWidget {
       overflow: overflow,
       style: TextStyle(
         fontSize: size,
-        fontWeight: shouldBold ? FontWeight.w600 : FontWeight.w400,
+        fontWeight: shouldBold ? FontWeight.w600 : FontWeight.w500,
         fontStyle: italic ? FontStyle.italic : FontStyle.normal,
-        color: color ?? AppColors.white,
+        color: color ?? AppColors.textPrimary,
         decoration: underline ? TextDecoration.underline : TextDecoration.none,
         decorationColor: color ?? AppColors.textSecondary,
         decorationThickness: 1.5,

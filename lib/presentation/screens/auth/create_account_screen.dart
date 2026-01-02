@@ -152,7 +152,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
               /// Continue Button
               CustomButton(
                 onPressed: createAccount,
-                text: "Continues",
+                text: "Continue",
                 shouldProceed: shouldProceed,
               ),
 
