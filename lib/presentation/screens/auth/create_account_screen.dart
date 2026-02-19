@@ -1,10 +1,13 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
+import 'package:HealthBridge/core/constants/app_constants.dart';
 import 'package:HealthBridge/core/constants/app_routes.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/input_text_field_wg.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/services/validation_service.dart';
@@ -33,14 +36,12 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     var authProvider = context.read<AuthProvider>();
     authProvider.email = emailController.text.trim();
     authProvider.password = passwordController.text.trim();
-    print(
-        "General log: the api is ${authProvider.role} ${authProvider.email} ${authProvider.password}");
 
-    final emailError = _validationService.validateEmail(authProvider.email);
-    if (emailError != null) {
-      SnackBarUtils.showError(context, emailError);
-      return;
-    }
+    // final emailError = _validationService.validateEmail(authProvider.email);
+    // if (emailError != null) {
+    //   SnackBarUtils.showError(context, emailError);
+    //   return;
+    // }
     final passwordError =
         _validationService.validatePassword(authProvider.password);
     if (passwordError != null) {
@@ -48,8 +49,18 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       return;
     }
 
-    // Handle navigation
-    context.goNextScreen(AppRoutes.verifyOtp);
+    context.showLoadingDialog();
+    // interact with provider -> register user and navigate
+    final response = await authProvider.authUser(AppConstants.register);
+
+    if (response == null) {
+      // Success → navigate
+      context.goNextScreen(AppRoutes.verifyOtp);
+    } else {
+      // Error → show message
+      SnackBarUtils.showError(context, response);
+    }
+    context.hideLoadingDialog();
   }
 
   @override
@@ -215,6 +226,11 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                           color: AppColors.red,
                           fontWeight: FontWeight.w600,
                         ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            // Navigate to login screen
+                            context.go(AppRoutes.login);
+                          },
                       ),
                     ],
                   ),

@@ -1,4 +1,3 @@
-import 'package:HealthBridge/presentation/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -12,19 +11,15 @@ void main() async {
   // Initialize dependencies
   await Injection.init();
 
-  // Initialize Stripe
-  // Stripe.publishableKey = AppConstants.stripePublishableKey;
-  // await Stripe.instance.applySettings();
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: Injection.authProvider),
-
-        // Provider.value(value: 0),
-        // ChangeNotifierProvider(create: (_) => AuthProvider(authRepository: authRepository)),
-        // ChangeNotifierProvider(create: (_) => LoginSignupProvider()),
-        // ChangeNotifierProvider(create: (_) => OtpProvider()),
-        // ChangeNotifierProvider(create: (_) => MyProfileProvider()),
+        ChangeNotifierProvider.value(value: Injection.patientProvider),
+        ChangeNotifierProvider.value(value: Injection.specialistProvider),
+        ChangeNotifierProvider.value(value: Injection.hospitalProvider),
+        ChangeNotifierProvider.value(value: Injection.appointmentProvider),
+        ChangeNotifierProvider.value(value: Injection.bloodRequestProvider),
       ],
       child: MyApp(),
     ),

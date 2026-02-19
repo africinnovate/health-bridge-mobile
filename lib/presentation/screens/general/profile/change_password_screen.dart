@@ -1,9 +1,13 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/core/utils/snackbar_utils.dart';
 import 'package:HealthBridge/presentation/widgets/cancel_button.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../../providers/auth_provider.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -27,6 +31,60 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handlePasswordChange(BuildContext context) async {
+    context.hideKeyboard();
+
+    final currentPassword = _currentPasswordController.text.trim();
+    final newPassword = _newPasswordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    // Validation
+    if (currentPassword.isEmpty) {
+      SnackBarUtils.showError(context, 'Please enter your current password');
+      return;
+    }
+
+    if (newPassword.isEmpty) {
+      SnackBarUtils.showError(context, 'Please enter a new password');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      SnackBarUtils.showError(
+          context, 'Password must be at least 8 characters');
+      return;
+    }
+
+    if (confirmPassword.isEmpty) {
+      SnackBarUtils.showError(context, 'Please confirm your new password');
+      return;
+    }
+
+    if (newPassword != confirmPassword) {
+      SnackBarUtils.showError(context, 'Passwords do not match');
+      return;
+    }
+
+    if (currentPassword == newPassword) {
+      SnackBarUtils.showError(
+          context, 'New password must be different from current password');
+      return;
+    }
+
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // Call change password API
+    final err = await authProvider.changePassword(currentPassword, newPassword);
+
+    if (err != null) {
+      SnackBarUtils.showError(context, err);
+      return;
+    }
+
+    SnackBarUtils.showSuccess(context, 'Password changed successfully!');
+    context.goBack();
   }
 
   @override
@@ -64,7 +122,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
             /// Current Password
             const Text(
-              'Full Name',
+              'Current Password',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -86,7 +144,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
             /// New Password
             const Text(
-              'Phone Number',
+              'New Password',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -108,7 +166,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
             /// Confirm Password
             const Text(
-              'Email Address',
+              'Confirm New Password',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -150,12 +208,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             const SizedBox(height: 32),
 
             /// Update Button
-            CustomButton(
-              onPressed: () {
-                // Handle password update
-                context.goBack();
+            Consumer<AuthProvider>(
+              builder: (context, authProvider, child) {
+                return CustomButton(
+                  onPressed: () => _handlePasswordChange(context),
+                  text: 'Update Password',
+                  showLoading: authProvider.isLoading,
+                );
               },
-              text: 'Update Password',
             ),
             const SizedBox(height: 12),
 
@@ -215,7 +275,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           ),
           IconButton(
             icon: Icon(
-              obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+              obscureText
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
               color: const Color(0xFF9CA3AF),
               size: 20,
             ),

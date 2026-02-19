@@ -1,7 +1,10 @@
-import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/core/constants/app_routes.dart';
+import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import '../../../../../core/utils/dialog.dart';
+import '../../../../../core/utils/validators.dart';
+import '../../../../../data/dataSource/secureData/secure_storage.dart';
 
 class PatientConsentScreen extends StatefulWidget {
   const PatientConsentScreen({super.key});
@@ -112,8 +115,12 @@ class _PatientConsentScreenState extends State<PatientConsentScreen> {
               onPressed: () {
                 showThankYouDialog(
                   context,
-                  onContinue: () {
-                    SnackBarUtils.showInfo(context, "on it");
+                  onContinue: () async {
+                    var authUser = await SecureStorage.getAuthData();
+                    var role = authUser?.user.role ?? Validators.role;
+                    context.replaceScreen(role == "patient"
+                        ? AppRoutes.patientRootScreen
+                        : AppRoutes.donorRootScreen);
                   },
                 );
               },

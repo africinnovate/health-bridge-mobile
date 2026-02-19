@@ -289,7 +289,7 @@ class _NewBloodRequestScreenState extends State<NewBloodRequestScreen> {
                 onPressed: () {
                   SnackBarUtils.showSuccess(context, "Request submitted");
                 },
-                text: 'Continue',
+                text: 'Submit',
               ),
             ),
             const SizedBox(height: 40),

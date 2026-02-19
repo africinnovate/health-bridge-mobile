@@ -3,44 +3,57 @@ import 'package:HealthBridge/core/utils/snackbar_utils.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/utils/dialog.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/specialist_provider.dart';
 
 class SpecialistProfileScreen extends StatelessWidget {
   final bool? showBackArrow;
-  const SpecialistProfileScreen({super.key, required this.showBackArrow});
+  const SpecialistProfileScreen({super.key, this.showBackArrow});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: CustomAppBar(
-        title: "My Profile",
-        showArrow: showBackArrow ?? false,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _profileHeader(),
-            const SizedBox(height: 16),
-            _personalInformation(context),
-            const SizedBox(height: 16),
-            _professionalInformation(context),
-            const SizedBox(height: 16),
-            _consultationTypes(),
-            const SizedBox(height: 16),
-            _schedule(),
-            const SizedBox(height: 16),
-            _accountSection(),
-            const SizedBox(height: 24),
-            CustomButton(onPressed: () => logout(context), text: "Log Out"),
-            const SizedBox(height: 80),
-          ],
-        ),
-      ),
+    return Consumer<SpecialistProvider>(
+      builder: (context, specialistProvider, child) {
+        final profile = specialistProvider.specialistProfileM;
+
+        return Scaffold(
+          backgroundColor: const Color(0xFFF9FAFB),
+          appBar: CustomAppBar(
+            title: "My Profile",
+            showArrow: showBackArrow ?? false,
+          ),
+          body: profile == null
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      _profileHeader(profile),
+                      const SizedBox(height: 16),
+                      _personalInformation(context, profile),
+                      const SizedBox(height: 16),
+                      _professionalInformation(context, profile),
+                      const SizedBox(height: 16),
+                      _consultationTypes(context, profile),
+                      const SizedBox(height: 16),
+                      _schedule(context, profile),
+                      const SizedBox(height: 16),
+                      _accountSection(context),
+                      const SizedBox(height: 24),
+                      CustomButton(
+                          onPressed: () => logout(context), text: "Log Out"),
+                      const SizedBox(height: 80),
+                    ],
+                  ),
+                ),
+        );
+      },
     );
   }
 
@@ -53,21 +66,59 @@ class SpecialistProfileScreen extends StatelessWidget {
       cancelText: 'Stay',
       icon: Icons.logout,
       onConfirm: () {
-        SnackBarUtils.showInfo(context, "In progress");
+        _performLogout(context);
       },
     );
   }
 
+  /// Perform logout - call API and clear storage
+  Future<void> _performLogout(BuildContext context) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // Show loading
+    context.showLoadingDialog();
+
+    try {
+      // Call logout API (also clears SecureStorage)
+      final error = await authProvider.logout();
+
+      if (error != null) {
+        // if (!mounted) return;
+        SnackBarUtils.showError(context, error);
+        authProvider.setIsLoadingToFalse();
+        return;
+      }
+
+      // Success - navigate to login screen
+      // if (!mounted) return;
+      SnackBarUtils.showSuccess(context, "Logged out successfully");
+
+      // Navigate to login and clear navigation stack
+      context.go(AppRoutes.login);
+    } catch (e) {
+      // if (!mounted) return;
+      SnackBarUtils.showError(context, "An error occurred during logout");
+      context.hideLoadingDialog();
+    }
+  }
+
   /// ---------------- Header ----------------
-  Widget _profileHeader() {
+  Widget _profileHeader(profile) {
+    final fullName = profile.firstName.isNotEmpty || profile.lastName.isNotEmpty
+        ? '${profile.firstName} ${profile.lastName}'.trim()
+        : profile.email;
+
     return _card(
       child: Column(
         children: [
           Stack(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 52,
-                backgroundImage: AssetImage('assets/images/patient.png'),
+                backgroundImage: profile.imageUrl != null
+                    ? NetworkImage(profile.imageUrl!)
+                    : const AssetImage('assets/images/patient.png')
+                        as ImageProvider,
               ),
               Positioned(
                 bottom: 0,
@@ -86,9 +137,9 @@ class SpecialistProfileScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Dr. Sarah Okonkwo',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Text(
+            fullName,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 6),
           Container(
@@ -98,14 +149,28 @@ class SpecialistProfileScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Text(
-              'Cardiology',
+              'Specialist',
               style: TextStyle(color: AppColors.green, fontSize: 12),
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            '⭐ 4.5 • 238 reviews',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                profile.verified ? Icons.verified : Icons.pending,
+                size: 16,
+                color: profile.verified ? Colors.green : Colors.orange,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                profile.verified ? 'Verified' : 'Pending Verification',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: profile.verified ? Colors.green : Colors.orange,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -113,72 +178,126 @@ class SpecialistProfileScreen extends StatelessWidget {
   }
 
   /// ---------------- Personal Info ----------------
-  Widget _personalInformation(BuildContext context) {
+  Widget _personalInformation(BuildContext context, profile) {
     return _infoSection(
       title: 'Personal Information',
       onEdit: () {
         context.goNextScreen(AppRoutes.editPersonalSpecialist);
       },
-      children: const [
-        _InfoRow(Icons.email, 'Email Address', 'Sarahoknkwo@gmail.com'),
-        _InfoRow(Icons.call, 'Phone Number', '+2348023476400'),
-        _InfoRow(Icons.location_on, 'Address',
-            '123 Medical Center Drive, Lagos Island,\nLagos State, Nigeria'),
-        _InfoRow(Icons.warning, 'Emergency Hotline', '+2348023476400'),
-        _InfoRow(Icons.public, 'Country', 'Nigeria'),
+      children: [
+        _InfoRow(Icons.email, 'Email Address', profile.email),
+        _InfoRow(Icons.call, 'Phone Number',
+            profile.primaryPhone ?? profile.phone ?? 'Not provided'),
+        if (profile.secondaryPhone != null)
+          _InfoRow(Icons.call, 'Secondary Phone', profile.secondaryPhone!),
+        _InfoRow(Icons.public, 'Country', profile.country ?? 'Not provided'),
+        if (profile.gender != null)
+          _InfoRow(Icons.person, 'Gender',
+              profile.gender!.capitalizeFirst() ?? 'Not provided'),
       ],
     );
   }
 
   /// ---------------- Professional Info ----------------
-  Widget _professionalInformation(BuildContext context) {
+  Widget _professionalInformation(BuildContext context, profile) {
+    // Get specialty name from provider
+    final specialistProvider =
+        Provider.of<SpecialistProvider>(context, listen: false);
+    String specialtyName = 'Not specified';
+
+    if (profile.specialtyId != null) {
+      try {
+        final specialty = specialistProvider.specialties.firstWhere(
+          (s) => s.id == profile.specialtyId,
+        );
+        specialtyName = specialty.name;
+      } catch (e) {
+        specialtyName = 'Unknown specialty';
+      }
+    }
+
     return _infoSection(
       title: 'Professional Information',
       onEdit: () {
-        SnackBarUtils.showInfo(context, "In progress");
+        context.goNextScreenWithData(
+          AppRoutes.setProfileSpecialist,
+          extra: true, // isUpdateMode = true
+        );
       },
-      children: const [
-        _ChipRow('Specialties', ['Cardiology']),
-        _InfoRow(Icons.work, 'Years of Experience', '12+ years'),
+      children: [
+        _InfoRow(Icons.medical_services, 'Specialty', specialtyName),
+        _InfoRow(Icons.work, 'Years of Experience',
+            '${profile.yearsOfExperience ?? 0} years'),
         _InfoRow(
           Icons.article,
           'Bio',
-          'Board-certified cardiologist with extensive experience in preventive cardiology and heart disease management. '
-              'Committed to providing patient-centered care with a focus on evidence-based treatment.',
+          profile.bio ?? 'No bio provided',
         ),
+        if (profile.languagesSpoken != null)
+          _InfoRow(
+              Icons.language, 'Languages Spoken', profile.languagesSpoken!),
       ],
     );
   }
 
   /// ---------------- Consultation ----------------
-  Widget _consultationTypes() {
+  Widget _consultationTypes(BuildContext context, profile) {
+    // Format consultation type
+    String consultationType = profile.consultationType
+        .split('_')
+        .map((word) => word[0].toUpperCase() + word.substring(1))
+        .join(' ');
+
     return _infoSection(
       title: 'Consultation Types',
-      onEdit: () {},
-      children: const [
-        _ChipRow('Modes', ['Video Call', 'Voice Call', 'In Person']),
-        _InfoRow(Icons.location_on, 'In-Person Location',
-            'Lagos University Teaching Hospital'),
+      onEdit: () {
+        context.goNextScreenWithData(
+          AppRoutes.availabilitySpecialist,
+          extra: true, // isUpdateMode = true
+        );
+      },
+      children: [
+        _ChipRow('Modes', [consultationType]),
+        _InfoRow(Icons.access_time, 'Session Duration',
+            '${profile.sessionDurationMinutes ?? 0} minutes'),
+        if (profile.timeZone != null)
+          _InfoRow(Icons.schedule, 'Time Zone', profile.timeZone!),
       ],
     );
   }
 
   /// ---------------- Schedule ----------------
-  Widget _schedule() {
+  Widget _schedule(BuildContext context, profile) {
     return _infoSection(
       title: 'My Schedule',
-      onEdit: () {},
-      children: const [
-        Text(
-          'Monday - Friday: 9:00 AM - 5:00 PM\nSaturday: 10:00 AM - 2:00 PM',
-          style: TextStyle(color: Colors.grey),
-        )
+      onEdit: () {
+        context.goNextScreenWithData(
+          AppRoutes.availabilitySpecialist,
+          extra: true, // isUpdateMode = true
+        );
+      },
+      children: [
+        if (profile.availability.isNotEmpty)
+          ...profile.availability.map(
+            (avail) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                '${avail.dayOfWeek}: ${avail.opensAt} - ${avail.closesAt}',
+                style: const TextStyle(color: Colors.grey),
+              ),
+            ),
+          )
+        else
+          const Text(
+            'No availability set',
+            style: TextStyle(color: Colors.grey),
+          ),
       ],
     );
   }
 
   /// ---------------- Account ----------------
-  Widget _accountSection() {
+  Widget _accountSection(BuildContext context) {
     return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,7 +307,19 @@ class SpecialistProfileScreen extends StatelessWidget {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
-          _accountTile(Icons.lock, 'Change Password'),
+          _accountTile(
+            Icons.lock,
+            'Change Password',
+            onTap: () async {
+              // Refresh token in background to ensure valid token for password change
+              final authProvider =
+                  Provider.of<AuthProvider>(context, listen: false);
+              authProvider.refreshAccessToken();
+
+              // Navigate immediately while token refresh happens in background
+              context.goNextScreen(AppRoutes.changePassword);
+            },
+          ),
           _accountTile(Icons.description, 'Terms & Conditions'),
           _accountTile(Icons.language, 'Language', trailing: 'English'),
           _accountTile(Icons.privacy_tip, 'Privacy Policy'),
@@ -235,7 +366,8 @@ class SpecialistProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _accountTile(IconData icon, String title, {String? trailing}) {
+  Widget _accountTile(IconData icon, String title,
+      {String? trailing, VoidCallback? onTap}) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: Colors.grey),
@@ -243,7 +375,7 @@ class SpecialistProfileScreen extends StatelessWidget {
       trailing: trailing != null
           ? Text(trailing, style: const TextStyle(color: Colors.grey))
           : const Icon(Icons.chevron_right),
-      onTap: () {},
+      onTap: onTap ?? () {},
     );
   }
 }

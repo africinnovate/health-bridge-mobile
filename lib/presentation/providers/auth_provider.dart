@@ -1,6 +1,9 @@
 import 'dart:core';
 
-import 'package:HealthBridge/data/models/auth_model.dart';
+import 'package:HealthBridge/core/constants/app_constants.dart';
+import 'package:HealthBridge/core/utils/response_utils.dart';
+import 'package:HealthBridge/data/dataSource/secureData/secure_storage.dart';
+import 'package:HealthBridge/data/models/auth/auth_model.dart';
 import 'package:HealthBridge/data/models/response_status_m.dart';
 import 'package:flutter/cupertino.dart';
 
@@ -17,11 +20,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   String email = '';
-  String firstName = '';
-  String lastName = '';
-  String gender = '';
   String password = '';
-  String phone = '';
   String role = '';
 
   // RegisterModel _registerModel;
@@ -31,20 +30,234 @@ class AuthProvider extends ChangeNotifier {
         role: role,
       );
 
-  Future<ResponseStatusM> registerUser() async {
-    // RegisterModel _registerModel = RegisterModel(
-    //   email: email,
-    //   password: password,
-    //   role: role,
-    // );
-    return getResponse(authRepository.registerUser(registerModel));
+  String? token;
+  String? refreshToken;
+  UserModel? userModel;
+
+  Future<void> loadAuthData() async {
+    final authData = await SecureStorage.getAuthData();
+    if (authData != null) {
+      token = authData.token;
+      refreshToken = authData.refresh_token;
+      userModel = authData.user;
+      notifyListeners();
+    }
   }
 
-  resendOtp() {}
+  /// login|register user with email, password, role(optional for login)
+  Future<String?> authUser(String option) async {
+    final res = option == AppConstants.register
+        ? await getResponse(authRepository.registerUser(registerModel))
+        : await getResponse(authRepository.loginUser(registerModel));
 
-  verifyOtp({required String otp}) {}
+    if (ResponseUtils.isSuccessful(res)) {
+      if (res.data == null) return 'Invalid server response';
 
-  login() {}
+      final authData = AuthDataModel.fromJson(res.data);
+
+      token = authData.token;
+      refreshToken = authData.refresh_token;
+      userModel = authData.user;
+
+      await SecureStorage.saveAuthData(authData);
+
+      return null; // success
+    }
+    print("General log: authUser error message: ${res.message}");
+    return res.message;
+  }
+
+  /* Details
+  specialist - godstimeetin@gmail.com,
+  donor - ronokinno+01@gmail.com
+  hospital - ronokinno+02@gmail.com
+  ResponseStatusM {
+   status_code: 201,
+   message: User registered successfully,
+   data: {token: , refresh_token: , user: {id: 7faae0ea-31f6-4263-b4e5-aa92d8899305, first_name: , last_name: , email: ronokinno@gmail.com, role: specialist}},
+   time: 1768055828095 (2026-01-10 15:37:08.095)
+ }
+   */
+
+  /// Resend verification code to user's email
+  Future<String?> resendOtp() async {
+    var authData = await SecureStorage.getAuthData();
+
+    var payload = {"email": userModel?.email ?? authData?.user.email ?? email};
+    // print("General log: payload is $payload");
+    final res =
+        await getResponse(authRepository.resendVerificationCode(payload));
+
+    if (ResponseUtils.isSuccessful(res)) {
+      return null; // success
+    }
+    return res.message ?? "Failed to resend verification code";
+  }
+
+  /// verify email via otp. Payload -  code and email
+  Future<String?> verifyEmailViaOtp({required String otp}) async {
+    var payload = {"code": otp, "email": email};
+    final res = await getResponse(authRepository.verifyEmailViaOtp(payload));
+
+    if (ResponseUtils.isSuccessful(res)) {
+      // Check if data is null or empty object
+      if (res.data == null || res.data.isEmpty) {
+        // Email verified successfully but no new tokens returned
+        // This is normal - just return success
+        return null;
+      }
+
+      // Check if data contains token and user (some APIs return new tokens after verification)
+      if (res.data.containsKey('token') && res.data.containsKey('user')) {
+        final authData = AuthDataModel.fromJson(res.data);
+
+        // update the authData
+        if (authData.token != null && authData.token!.isNotEmpty) {
+          token = authData.token;
+          refreshToken = authData.refresh_token;
+          var auth = AuthDataModel(
+              token: token!, refresh_token: refreshToken!, user: userModel!);
+          await SecureStorage.saveAuthData(auth);
+        }
+      }
+
+      return null; // success
+    }
+    return res.message ?? "An error occurred";
+  }
+
+  Future<bool> isUserLoggedIn() async {
+    return await SecureStorage.getAuthData() != null;
+  }
+
+  /// Logout user - revokes refresh token and clears local data
+  Future<String?> logout() async {
+    // Get refresh token from storage
+    final authData = await SecureStorage.getAuthData();
+    if (authData == null || authData.refresh_token == null) {
+      // No auth data, just clear local storage
+      await SecureStorage.clearProfile();
+      token = null;
+      refreshToken = null;
+      userModel = null;
+      notifyListeners();
+      return null; // success (nothing to logout from)
+    }
+
+    // Call logout API to revoke refresh token
+    final res =
+        await getResponse(authRepository.logout(authData.refresh_token!));
+
+    // Clear local storage regardless of API response
+    // (user should be logged out locally even if API call fails)
+    await SecureStorage.clearProfile();
+    token = null;
+    refreshToken = null;
+    userModel = null;
+    notifyListeners();
+
+    if (ResponseUtils.isSuccessful(res)) {
+      return null; // success
+    }
+
+    // Even if API failed, we still cleared local data
+    // So return success to avoid confusing the user
+    return null;
+  }
+
+  /// Refresh access token using refresh token
+  /// This method can be called proactively to refresh the token before it expires
+  /// Returns null on success, error message on failure
+  Future<String?> refreshAccessToken() async {
+    // Get refresh token from storage
+    final authData = await SecureStorage.getAuthData();
+    if (authData == null || authData.refresh_token == null) {
+      return 'No refresh token available';
+    }
+
+    final res = await getResponse(
+      authRepository.refreshToken(authData.refresh_token!),
+      shouldLoad: false, // Don't show loading indicator for background refresh
+    );
+
+    if (ResponseUtils.isSuccessful(res)) {
+      if (res.data == null) return 'Invalid server response';
+
+      // Extract new tokens from response
+      final newAccessToken = res.data['access_token'];
+      final newRefreshToken = res.data['refresh_token'];
+
+      if (newAccessToken == null || newRefreshToken == null) {
+        return 'Invalid token response';
+      }
+
+      // Update stored auth data with new tokens
+      final updatedAuthData = AuthDataModel(
+        token: newAccessToken,
+        refresh_token: newRefreshToken,
+        user: authData.user,
+      );
+
+      await SecureStorage.saveAuthData(updatedAuthData);
+
+      // Update provider state
+      token = newAccessToken;
+      refreshToken = newRefreshToken;
+      notifyListeners();
+      // debugPrint("General log: the new token is $newAccessToken");
+      return null; // success
+    }
+
+    return res.message ?? 'Failed to refresh token';
+  }
+
+  /// Send password reset link to user's email
+  Future<String?> forgotPassword(String email) async {
+    final res = await getResponse(
+      authRepository.forgotPassword(email),
+    );
+
+    if (ResponseUtils.isSuccessful(res)) {
+      return null; // success
+    }
+
+    return res.message ?? 'Failed to send reset link';
+  }
+
+  /// Reset password using code from email
+  Future<String?> resetPasswordWithCode({
+    required String code,
+    required String newPassword,
+  }) async {
+    final res = await getResponse(
+      authRepository.resetPasswordWithCode(
+        code: code,
+        newPassword: newPassword,
+      ),
+    );
+
+    if (ResponseUtils.isSuccessful(res)) {
+      return null; // success
+    }
+
+    return res.message ?? 'Failed to reset password';
+  }
+
+  /// Change password for authenticated user
+  Future<String?> changePassword(String currentPass, String newPassword) async {
+    final res = await getResponse(
+      authRepository.resetPassword(
+        currentPass: currentPass,
+        newPassword: newPassword,
+      ),
+    );
+
+    if (ResponseUtils.isSuccessful(res)) {
+      return null; // success
+    }
+
+    return res.message ?? 'Failed to change password';
+  }
 
   // reusable function
   Future<ResponseStatusM> getResponse(Future<ResponseStatusM> repoCall,

@@ -1,6 +1,10 @@
 import 'package:HealthBridge/presentation/screens/auth/create_account_screen.dart';
+import 'package:HealthBridge/presentation/screens/auth/forgot_password_screen.dart';
+import 'package:HealthBridge/presentation/screens/auth/logic_screen.dart';
 import 'package:HealthBridge/presentation/screens/auth/preference_screen.dart';
+import 'package:HealthBridge/presentation/screens/auth/reset_password_screen.dart';
 import 'package:HealthBridge/presentation/screens/auth/verify_account_screen.dart';
+import 'package:HealthBridge/presentation/screens/splash/splash_screen.dart';
 import 'package:HealthBridge/presentation/screens/donor/appointment/appointment_detail_screen.dart';
 import 'package:HealthBridge/presentation/screens/donor/appointment/appointment_rescheduled_screen.dart';
 import 'package:HealthBridge/presentation/screens/donor/donations/donation_details_screen.dart';
@@ -9,8 +13,6 @@ import 'package:HealthBridge/presentation/screens/donor/donor_root_screen.dart';
 import 'package:HealthBridge/presentation/screens/donor/home/blood_request_booking_screen.dart';
 import 'package:HealthBridge/presentation/screens/donor/home/nearby_hospitals_screen.dart';
 import 'package:HealthBridge/presentation/screens/donor/notification/donor_notification_screen.dart';
-import 'package:HealthBridge/presentation/screens/general/profile/edit_personal_information_screen.dart'
-    as donor_profile;
 import 'package:HealthBridge/presentation/screens/donor/records/appointments_screen.dart';
 import 'package:HealthBridge/presentation/screens/donor/records/donation_history_screen.dart';
 import 'package:HealthBridge/presentation/screens/specialist/appointment/appointment_detail_screen.dart'
@@ -21,6 +23,7 @@ import 'package:HealthBridge/presentation/screens/specialist/profile/patient_pro
 import 'package:HealthBridge/presentation/screens/specialist/profile/specialist_profile_screen.dart';
 import 'package:HealthBridge/presentation/screens/specialist/specialist_root_screen.dart';
 import 'package:go_router/go_router.dart';
+import '../../presentation/screens/general/document_viewer_screen.dart';
 import '../../presentation/screens/general/profile/change_password_screen.dart';
 import '../../presentation/screens/general/profile/consultation_preference_screen.dart';
 import '../../presentation/screens/general/profile/contact_support_screen.dart';
@@ -55,11 +58,8 @@ import '../../presentation/screens/patient/notification/patient_notification_scr
 import '../../presentation/screens/patient/patient_root_screen.dart';
 import '../../presentation/screens/patient/profile/care_history_screen.dart';
 import '../../presentation/screens/patient/profile/consultation_preference_screen.dart';
-import '../../presentation/screens/patient/profile/edit_profile_screen.dart';
-import '../../presentation/screens/patient/profile/medical_information_screen.dart';
 import '../../presentation/screens/patient/profile/onboard/consent_screen.dart';
 import '../../presentation/screens/patient/profile/onboard/patient_set_profile_screen.dart';
-import '../../presentation/screens/patient/profile/personal_information_screen.dart';
 import '../../presentation/screens/specialist/appointment/appointment_requests_screen.dart';
 import '../../presentation/screens/specialist/profile/onboard/specialist_availability_screen.dart';
 import '../../presentation/screens/specialist/profile/onboard/specialist_set_profile_screen.dart';
@@ -69,12 +69,19 @@ import '../constants/app_routes.dart';
 class AppRouter {
   static final GoRouter router = GoRouter(
     // initialLocation: AppRoutes.hospitalRootScreen,
-    initialLocation: AppRoutes.preference,
+    // initialLocation: AppRoutes.preference,
+    // initialLocation: AppRoutes.login,
+    initialLocation: AppRoutes.splash,
     // initialLocation: AppRoutes.patientRootScreen,
     // initialLocation: AppRoutes.specialistRootScreen,
     // initialLocation: AppRoutes.patientRootScreen,
     // initialLocation: AppRoutes.donorRootScreen,
     routes: [
+      GoRoute(
+        path: AppRoutes.splash,
+        builder: (context, state) => SplashScreen(),
+      ),
+
       GoRoute(
         // choose role
         path: AppRoutes.preference,
@@ -87,8 +94,26 @@ class AppRouter {
       ),
 
       GoRoute(
+        path: AppRoutes.login,
+        builder: (context, state) => LoginScreen(),
+      ),
+
+      GoRoute(
         path: AppRoutes.verifyOtp,
         builder: (context, state) => VerifyAccountScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.forgotPassword,
+        builder: (context, state) => ForgotPasswordScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.resetPassword,
+        builder: (context, state) {
+          final email = state.extra as String? ?? '';
+          return ResetPasswordScreen(email: email);
+        },
       ),
 
       /// donor
@@ -133,8 +158,7 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.editPersonalInfoDonor,
-        builder: (context, state) =>
-            donor_profile.EditPersonalInformationScreen(),
+        builder: (context, state) => EditProfileScreen(),
       ),
       GoRoute(
         path: AppRoutes.editMedicalInfoDonor,
@@ -231,15 +255,11 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.editProfilePatient,
-        builder: (context, state) => EditProfilePatientScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.personalInfoPatient,
-        builder: (context, state) => PersonalInformationPatientScreen(),
+        builder: (context, state) => EditProfileScreen(),
       ),
       GoRoute(
         path: AppRoutes.medicalInfoPatient,
-        builder: (context, state) => MedicalInformationPatientScreen(),
+        builder: (context, state) => PatientSetProfileScreen(),
       ),
       GoRoute(
         path: AppRoutes.consultationPreferencePatient,
@@ -251,16 +271,25 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.setProfileHospital,
-        builder: (context, state) => HospitalProfileScreen(),
+        builder: (context, state) {
+          final isEditMode = state.extra as bool? ?? false;
+          return HospitalSetupProfileScreen(isEditMode: isEditMode);
+        },
       ),
       GoRoute(
         path: AppRoutes.bloodServiceHospital,
-        builder: (context, state) => BloodServicesScreen(),
+        builder: (context, state) {
+          final isEditMode = state.extra as bool? ?? false;
+          return BloodServicesScreen(isEditMode: isEditMode);
+        },
       ),
 
       GoRoute(
         path: AppRoutes.notificationsHospital,
-        builder: (context, state) => NotificationHospitalScreen(),
+        builder: (context, state) {
+          final isEditMode = state.extra as bool? ?? false;
+          return NotificationHospitalScreen(isEditMode: isEditMode);
+        },
       ),
       GoRoute(
         path: AppRoutes.hospitalComplete,
@@ -312,16 +341,25 @@ class AppRouter {
         builder: (context, state) => HospitalNotificationScreen(),
       ),
       GoRoute(
+        path: AppRoutes.documentViewer,
+        builder: (context, state) {
+          final url = state.extra as String;
+          return DocumentViewerScreen(url: url);
+        },
+      ),
+      GoRoute(
         path: AppRoutes.setProfileSpecialist,
-        builder: (context, state) => SpecialistSetProfileScreen(),
+        builder: (context, state) {
+          final isUpdateMode = state.extra as bool? ?? false;
+          return SpecialistSetProfileScreen(isUpdateMode: isUpdateMode);
+        },
       ),
       GoRoute(
         path: AppRoutes.availabilitySpecialist,
-        builder: (context, state) => SpecialistAvailabilityScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.bloodServiceHospital,
-        builder: (context, state) => BloodServicesScreen(),
+        builder: (context, state) {
+          final isUpdateMode = state.extra as bool? ?? false;
+          return SpecialistAvailabilityScreen(isUpdateMode: isUpdateMode);
+        },
       ),
       GoRoute(
         path: AppRoutes.specialistRootScreen,

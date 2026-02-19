@@ -1,11 +1,18 @@
 import 'package:HealthBridge/core/constants/app_routes.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/core/utils/snackbar_utils.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../../../../../data/dataSource/secureData/secure_storage.dart';
+import '../../../../../presentation/providers/hospital_provider.dart';
 
 class NotificationHospitalScreen extends StatefulWidget {
-  const NotificationHospitalScreen({super.key});
+  final bool isEditMode;
+  const NotificationHospitalScreen({super.key, this.isEditMode = false});
 
   @override
   State<NotificationHospitalScreen> createState() =>
@@ -24,150 +31,260 @@ class _NotificationHospitalScreenState
   bool smsNotifications = true;
   bool pushNotifications = true;
 
+  bool _isLoading = true;
+  String? _hospitalId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotificationSettings();
+  }
+
+  Future<void> _loadNotificationSettings() async {
+    try {
+      // Get hospital ID from secure storage
+      final authData = await SecureStorage.getAuthData();
+      if (authData == null) {
+        if (mounted) {
+          SnackBarUtils.showError(context, "Failed to load hospital data");
+          setState(() => _isLoading = false);
+        }
+        return;
+      }
+
+      // Load notification settings from provider
+      final hospitalProvider = context.read<HospitalProvider>();
+      _hospitalId = hospitalProvider.hospitalProfile?.id;
+
+      final error =
+          await hospitalProvider.getHospitalNotification(_hospitalId!);
+
+      if (error == null && hospitalProvider.hospitalNotification != null) {
+        final notification = hospitalProvider.hospitalNotification!;
+        // Update local state with loaded data
+        setState(() {
+          donationRequests = notification.donationRequests;
+          newDonorAppointment = notification.newDonorAppointments;
+          donorReminders = notification.donorAppointmentReminders;
+          loginAlerts = notification.loginAlerts;
+          accountNotifications = notification.accountNotifications;
+          emailNotifications = notification.emailNotifications;
+          smsNotifications = notification.smsNotifications;
+          pushNotifications = notification.pushNotifications;
+          _isLoading = false;
+        });
+      } else {
+        if (mounted) {
+          SnackBarUtils.showError(context, error ?? "Failed to load settings");
+          setState(() => _isLoading = false);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarUtils.showError(context, "Error loading notification settings");
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: CustomAppBar(),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 12),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 12),
 
-                    /// Title
-                    const Text(
-                      'Set Your Notification Preferences',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                          /// Title
+                          const Text(
+                            'Set Your Notification Preferences',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          /// Subtitle
+                          const Text(
+                            'Choose how your hospital receives updates about blood '
+                            'requests, donor appointments, and system activity.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF6B7280),
+                              height: 1.4,
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          _sectionTitle('Blood Request Notifications'),
+
+                          _notificationTile(
+                            icon: Icons.favorite,
+                            iconColor: Colors.red,
+                            title: 'Donation Requests',
+                            subtitle:
+                                'Updates about blood requests by other hospitals',
+                            value: donationRequests,
+                            onChanged: (v) =>
+                                setState(() => donationRequests = v),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          _sectionTitle('Blood Request Notifications'),
+
+                          _notificationTile(
+                            icon: Icons.person,
+                            title: 'New Donor Appointment',
+                            subtitle:
+                                'Get notified for all new donor appointment.',
+                            value: newDonorAppointment,
+                            onChanged: (v) =>
+                                setState(() => newDonorAppointment = v),
+                          ),
+
+                          _notificationTile(
+                            icon: Icons.notifications,
+                            title: 'Donor Appointment Reminders',
+                            subtitle:
+                                'Get notified on schedules before upcoming appointments.',
+                            value: donorReminders,
+                            onChanged: (v) =>
+                                setState(() => donorReminders = v),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          _sectionTitle('System Activity'),
+
+                          _notificationTile(
+                            icon: Icons.login,
+                            title: 'Login Alerts',
+                            subtitle:
+                                'Receive all login alerts including devices and locations.',
+                            value: loginAlerts,
+                            onChanged: (v) => setState(() => loginAlerts = v),
+                          ),
+
+                          _notificationTile(
+                            icon: Icons.shield,
+                            title: 'Account Notifications',
+                            subtitle: 'Security and account-related updates',
+                            value: accountNotifications,
+                            onChanged: (v) =>
+                                setState(() => accountNotifications = v),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          _sectionTitle('Delivery Options'),
+
+                          _notificationTile(
+                            icon: Icons.email,
+                            title: 'Email Notifications',
+                            subtitle: 'Receive updates via email',
+                            value: emailNotifications,
+                            onChanged: (v) =>
+                                setState(() => emailNotifications = v),
+                          ),
+
+                          _notificationTile(
+                            icon: Icons.phone,
+                            title: 'SMS Notifications',
+                            subtitle: 'Receive text message alerts',
+                            value: smsNotifications,
+                            onChanged: (v) =>
+                                setState(() => smsNotifications = v),
+                          ),
+
+                          _notificationTile(
+                            icon: Icons.chat_bubble,
+                            title: 'Push Notifications',
+                            subtitle: 'Get instant app notifications',
+                            value: pushNotifications,
+                            onChanged: (v) =>
+                                setState(() => pushNotifications = v),
+                          ),
+
+                          const SizedBox(height: 32),
+                        ],
                       ),
                     ),
+                  ),
 
-                    const SizedBox(height: 8),
-
-                    /// Subtitle
-                    const Text(
-                      'Choose how your hospital receives updates about blood '
-                      'requests, donor appointments, and system activity.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF6B7280),
-                        height: 1.4,
-                      ),
+                  /// Bottom button
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: CustomButton(
+                      onPressed: _handleFinishSetup,
+                      text: widget.isEditMode ? "Save" : "Finish Set Up",
                     ),
-
-                    const SizedBox(height: 24),
-
-                    _sectionTitle('Blood Request Notifications'),
-
-                    _notificationTile(
-                      icon: Icons.favorite,
-                      iconColor: Colors.red,
-                      title: 'Donation Requests',
-                      subtitle:
-                          'Updates about blood requests by other hospitals',
-                      value: donationRequests,
-                      onChanged: (v) => setState(() => donationRequests = v),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    _sectionTitle('Blood Request Notifications'),
-
-                    _notificationTile(
-                      icon: Icons.person,
-                      title: 'New Donor Appointment',
-                      subtitle: 'Get notified for all new donor appointment.',
-                      value: newDonorAppointment,
-                      onChanged: (v) => setState(() => newDonorAppointment = v),
-                    ),
-
-                    _notificationTile(
-                      icon: Icons.notifications,
-                      title: 'Donor Appointment Reminders',
-                      subtitle:
-                          'Get notified on schedules before upcoming appointments.',
-                      value: donorReminders,
-                      onChanged: (v) => setState(() => donorReminders = v),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    _sectionTitle('System Activity'),
-
-                    _notificationTile(
-                      icon: Icons.login,
-                      title: 'Login Alerts',
-                      subtitle:
-                          'Receive all login alerts including devices and locations.',
-                      value: loginAlerts,
-                      onChanged: (v) => setState(() => loginAlerts = v),
-                    ),
-
-                    _notificationTile(
-                      icon: Icons.shield,
-                      title: 'Account Notifications',
-                      subtitle: 'Security and account-related updates',
-                      value: accountNotifications,
-                      onChanged: (v) =>
-                          setState(() => accountNotifications = v),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    _sectionTitle('Delivery Options'),
-
-                    _notificationTile(
-                      icon: Icons.email,
-                      title: 'Email Notifications',
-                      subtitle: 'Receive updates via email',
-                      value: emailNotifications,
-                      onChanged: (v) => setState(() => emailNotifications = v),
-                    ),
-
-                    _notificationTile(
-                      icon: Icons.phone,
-                      title: 'SMS Notifications',
-                      subtitle: 'Receive text message alerts',
-                      value: smsNotifications,
-                      onChanged: (v) => setState(() => smsNotifications = v),
-                    ),
-
-                    _notificationTile(
-                      icon: Icons.chat_bubble,
-                      title: 'Push Notifications',
-                      subtitle: 'Get instant app notifications',
-                      value: pushNotifications,
-                      onChanged: (v) => setState(() => pushNotifications = v),
-                    ),
-
-                    const SizedBox(height: 32),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
-
-            /// Bottom button
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: CustomButton(
-                onPressed: () {
-                  // TODO: Save preferences + navigate
-                  context.goNextScreen(AppRoutes.hospitalComplete);
-                },
-                text: "Finish Set Up",
-              ),
-            ),
-          ],
-        ),
       ),
     );
+  }
+
+  Future<void> _handleFinishSetup() async {
+    if (_hospitalId == null) {
+      SnackBarUtils.showError(context, "Hospital ID not found");
+      return;
+    }
+
+    // Build notification preferences payload
+    final payload = {
+      'donation_requests': donationRequests,
+      'new_donor_appointments': newDonorAppointment,
+      'donor_appointment_reminders': donorReminders,
+      'login_alerts': loginAlerts,
+      'account_notifications': accountNotifications,
+      'email_notifications': emailNotifications,
+      'sms_notifications': smsNotifications,
+      'push_notifications': pushNotifications,
+    };
+
+    try {
+      final hospitalProvider = context.read<HospitalProvider>();
+      final error = await hospitalProvider.updateHospitalNotification(
+          payload, _hospitalId!);
+
+      if (error == null) {
+        if (mounted) {
+          SnackBarUtils.showSuccess(context, "Preferences saved successfully");
+          // Navigate based on flow
+          await Future.delayed(const Duration(milliseconds: 500));
+          if (mounted) {
+            if (widget.isEditMode) {
+              context.goBack();
+            } else {
+              context.go(AppRoutes.hospitalComplete);
+            }
+          }
+        }
+      } else {
+        if (mounted) {
+          SnackBarUtils.showError(context, error);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        SnackBarUtils.showError(context, "Failed to save preferences");
+      }
+    }
   }
 
   /// ---------- Section Title ----------

@@ -13,6 +13,7 @@ import 'package:pin_code_fields/pin_code_fields.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_routes.dart';
+import '../../../data/dataSource/secureData/secure_storage.dart';
 import '../../providers/auth_provider.dart';
 
 class VerifyAccountScreen extends StatefulWidget {
@@ -65,26 +66,39 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
       return;
     }
 
+    // context.showLoadingDialog();
     final authProvider = context.read<AuthProvider>();
 
-    final success = await authProvider.verifyOtp(
+    String? success = await authProvider.verifyEmailViaOtp(
       otp: _otpController.text,
     );
+    // context.hideLoadingDialog();
 
     // TODO: Handle navigation based on verification result and role
     if (!mounted) return;
+    if (success != null) {
+      SnackBarUtils.showError(
+        context,
+        'Invalid OTP. Please try again.',
+      );
+      return;
+    }
 
-    if (Validators.role == "donor") {
-      // adjust later | share profile with specialist
-      context.goNextScreen(AppRoutes.donorRootScreen);
-    } else if (Validators.role == "specialist") {
+    String? token = authProvider.token;
+    if (token == null || token.isEmpty) {
+      context.go(AppRoutes.login);
+      return;
+    }
+    var authUser = await SecureStorage.getAuthData();
+    var role = authUser?.user.role ?? Validators.role;
+
+    if (role == "specialist") {
       context.goNextScreen(AppRoutes.setProfileSpecialist);
-    } else if (Validators.role == "patient") {
+    } else if (role == "patient" || role == "donor") {
       context.goNextScreen(AppRoutes.setProfilePatient);
     } else {
       context.goNextScreen(AppRoutes.setProfileHospital);
     }
-
     ;
   }
 
@@ -95,7 +109,7 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
 
     if (!mounted) return;
 
-    if (success) {
+    if (success != null) {
       SnackBarUtils.showSuccess(context, 'OTP resent successfully!');
       _startResendTimer();
     } else {

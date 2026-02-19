@@ -14,19 +14,20 @@ class ResponseUtils {
       ResponseStatusM model =
           ResponseStatusM.fromJson(jsonDecode(response.body));
       print("General log: the api model is $model");
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return model;
-      } else {
-        // Handle error responses
-        return ResponseStatusM(
-          code: response.statusCode,
-          message:
-              '$message: ${response.statusCode} :- ${response.reasonPhrase}',
-        );
-      }
+      return model;
+      // if (response.statusCode == 200 || response.statusCode == 201) {
+      //   return model;
+      // } else {
+      //   // Handle error responses
+      //   return ResponseStatusM(
+      //     status_code: response.statusCode,
+      //     message:
+      //         '$message: ${model.message ?? 'Unknown error'} (${response.statusCode})',
+      //   );
+      // }
     } catch (e) {
       return ResponseStatusM(
-        code: AppConstants.errorCode,
+        status_code: AppConstants.errorCode,
         message: '$message: ${e.toString()}',
       );
     }
@@ -36,12 +37,17 @@ class ResponseUtils {
     return await checkNetwork().then((networkIsOkay) {
       if (networkIsOkay) {
         return ResponseStatusM(
-            code: AppConstants.errorCode, message: 'Error: ${e.toString()}');
+            status_code: AppConstants.errorCode,
+            message: 'Error: ${e.toString()}');
       } else {
         return ResponseStatusM(
-            code: AppConstants.networkErrorCode,
+            status_code: AppConstants.networkErrorCode,
             message: 'No network connection');
       }
     });
+  }
+
+  static bool isSuccessful(ResponseStatusM response) {
+    return response.status_code == 200 || response.status_code == 201;
   }
 }

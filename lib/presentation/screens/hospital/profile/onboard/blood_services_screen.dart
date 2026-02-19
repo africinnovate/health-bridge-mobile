@@ -3,11 +3,14 @@ import 'package:HealthBridge/core/utils/snackbar_utils.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../../core/constants/app_routes.dart';
+import '../../../../../presentation/providers/hospital_provider.dart';
 
 class BloodServicesScreen extends StatefulWidget {
-  const BloodServicesScreen({super.key});
+  final bool isEditMode;
+  const BloodServicesScreen({super.key, this.isEditMode = false});
 
   @override
   State<BloodServicesScreen> createState() => _BloodServicesScreenState();
@@ -16,6 +19,79 @@ class BloodServicesScreen extends StatefulWidget {
 class _BloodServicesScreenState extends State<BloodServicesScreen> {
   bool hasBloodBank = true;
   bool acceptingDonors = true;
+  TimeOfDay? startTime;
+  TimeOfDay? endTime;
+
+  // Blood inventory controllers
+  final Map<String, TextEditingController> bloodUnitsControllers = {};
+  final Map<String, TextEditingController> bloodCapacityControllers = {};
+  final Set<String> selectedBloodTypes = {};
+
+  @override
+  void initState() {
+    super.initState();
+    for (var bloodType in _bloodTypes) {
+      bloodUnitsControllers[bloodType] = TextEditingController();
+      bloodCapacityControllers[bloodType] = TextEditingController();
+    }
+    if (widget.isEditMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _prefillFromProfile());
+    }
+  }
+
+  void _prefillFromProfile() {
+    final profile = context.read<HospitalProvider>().hospitalProfile;
+    if (profile == null) return;
+    setState(() {
+      hasBloodBank = profile.hasBloodBank;
+      acceptingDonors = profile.acceptingDonors;
+      for (var inv in profile.bloodInventory) {
+        final displayType = _apiToDisplay(inv.bloodType);
+        selectedBloodTypes.add(displayType);
+        bloodUnitsControllers[displayType]?.text = inv.unitsAvailable.toString();
+        bloodCapacityControllers[displayType]?.text = inv.bankCapacity.toString();
+      }
+      final hours = profile.donatingOperatingHours;
+      if (hours.contains('-')) {
+        final parts = hours.split('-');
+        startTime = _parseTime(parts[0].trim());
+        endTime = _parseTime(parts[1].trim());
+      }
+    });
+  }
+
+  String _apiToDisplay(String api) {
+    const map = {
+      'apositive': 'A+', 'anegative': 'A-',
+      'bpositive': 'B+', 'bnegative': 'B-',
+      'abpositive': 'AB+', 'abnegative': 'AB-',
+      'opositive': 'O+', 'onegative': 'O-',
+    };
+    return map[api] ?? api;
+  }
+
+  TimeOfDay? _parseTime(String s) {
+    try {
+      final isPm = s.toUpperCase().contains('PM');
+      final clean = s.replaceAll(RegExp(r'[AaPpMm\s]'), '');
+      final parts = clean.split(':');
+      int h = int.parse(parts[0]);
+      final m = parts.length > 1 ? int.parse(parts[1]) : 0;
+      if (isPm && h != 12) h += 12;
+      if (!isPm && h == 12) h = 0;
+      return TimeOfDay(hour: h, minute: m);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  void dispose() {
+    // Dispose all controllers
+    bloodUnitsControllers.forEach((_, controller) => controller.dispose());
+    bloodCapacityControllers.forEach((_, controller) => controller.dispose());
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,13 +138,9 @@ class _BloodServicesScreenState extends State<BloodServicesScreen> {
 
             const SizedBox(height: 32),
 
-            /// Continue
             CustomButton(
-              onPressed: () {
-                // TODO: Save to api first if hasBloodBank == true,
-                context.goNextScreen(AppRoutes.notificationsHospital);
-              },
-              text: "Continue",
+              onPressed: () => _handleContinue(),
+              text: widget.isEditMode ? "Save" : "Continue",
             ),
 
             const SizedBox(height: 24),
@@ -176,9 +248,9 @@ class _BloodServicesScreenState extends State<BloodServicesScreen> {
         const SizedBox(height: 10),
         Row(
           children: [
-            Expanded(child: _timeBox()),
+            Expanded(child: _timeBox('From', true)),
             const SizedBox(width: 12),
-            Expanded(child: _timeBox()),
+            Expanded(child: _timeBox('To', false)),
           ],
         ),
       ],
@@ -186,20 +258,41 @@ class _BloodServicesScreenState extends State<BloodServicesScreen> {
   }
 
   Widget _bloodRow(String type) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: _cardDecoration(),
-      child: Row(
-        children: [
-          _radio(type == 'A+'),
-          const SizedBox(width: 8),
-          _chip(type),
-          const SizedBox(width: 8),
-          _inputSmall('Units available'),
-          const SizedBox(width: 8),
-          _inputSmall('Bank Capacity'),
-        ],
+    final isSelected = selectedBloodTypes.contains(type);
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          if (isSelected) {
+            selectedBloodTypes.remove(type);
+          } else {
+            selectedBloodTypes.add(type);
+          }
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: _cardDecoration(),
+        child: Row(
+          children: [
+            _checkbox(isSelected),
+            const SizedBox(width: 8),
+            _chip(type),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Expanded(
+                child: _inputSmall(
+                    'Units available', bloodUnitsControllers[type]!),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _inputSmall(
+                    'Bank Capacity', bloodCapacityControllers[type]!),
+              ),
+            ]
+          ],
+        ),
       ),
     );
   }
@@ -224,28 +317,216 @@ class _BloodServicesScreenState extends State<BloodServicesScreen> {
   }
 
   /// Helpers ---------------------------------------------------
-  Widget _radio(bool selected) {
+  Future<void> _handleContinue() async {
+    if (!hasBloodBank) {
+      widget.isEditMode ? _saveEditedBloodServices({
+        'hasBloodBank': false,
+        'acceptingDonors': false,
+        'bloodInventory': [],
+        'donatingOperatingHours': '',
+      }) : _submitHospitalProfile();
+      return;
+    }
+
+    // Validate blood services data
+    if (startTime == null || endTime == null) {
+      SnackBarUtils.showError(context, "Please select donation hours");
+      return;
+    }
+
+    if (selectedBloodTypes.isEmpty) {
+      SnackBarUtils.showError(context, "Please select at least one blood type");
+      return;
+    }
+
+    // Validate that all selected blood types have units and capacity
+    for (var bloodType in selectedBloodTypes) {
+      if (bloodUnitsControllers[bloodType]!.text.isEmpty ||
+          bloodCapacityControllers[bloodType]!.text.isEmpty) {
+        SnackBarUtils.showError(
+          context,
+          "Please enter units and capacity for all selected blood types",
+        );
+        return;
+      }
+    }
+
+    // Build blood inventory data
+    final bloodInventory = _buildBloodInventory();
+
+    final bloodServicesData = {
+      'hasBloodBank': hasBloodBank,
+      'acceptingDonors': acceptingDonors,
+      'bloodInventory': bloodInventory,
+      'donatingOperatingHours':
+          '${startTime!.format(context)}-${endTime!.format(context)}',
+    };
+
+    if (widget.isEditMode) {
+      await _saveEditedBloodServices(bloodServicesData);
+    } else {
+      context.read<HospitalProvider>().saveBloodServicesData(bloodServicesData);
+      await _submitHospitalProfile();
+    }
+  }
+
+  Future<void> _saveEditedBloodServices(Map<String, dynamic> bloodServicesData) async {
+    context.showLoadingDialog();
+    final hospitalProvider = context.read<HospitalProvider>();
+    final existingProfile = hospitalProvider.hospitalProfile!;
+
+    final payload = {
+      'name': existingProfile.name,
+      'hospital_type': existingProfile.hospitalType,
+      'address': existingProfile.address,
+      'country': existingProfile.country,
+      'city': existingProfile.city,
+      'email': existingProfile.email,
+      'primary_phone': existingProfile.primaryPhone,
+      'emergency_phone': existingProfile.emergencyPhone,
+      'license_number': existingProfile.licenseNumber,
+      'accreditation_doc_url': existingProfile.accreditationDocUrl ?? '',
+      'has_blood_bank': bloodServicesData['hasBloodBank'],
+      'accepting_donors': bloodServicesData['acceptingDonors'],
+      'blood_inventory': bloodServicesData['bloodInventory'],
+      'donating_operating_hours': bloodServicesData['donatingOperatingHours'],
+    };
+
+    try {
+      final error = await hospitalProvider.createHospital(payload,
+          hospitalId: existingProfile.id);
+      context.hideLoadingDialog();
+      if (error == null) {
+        if (mounted) context.goBack();
+      } else {
+        if (mounted) SnackBarUtils.showError(context, error);
+      }
+    } catch (e) {
+      context.hideLoadingDialog();
+      if (mounted) SnackBarUtils.showError(context, 'Failed to update blood services');
+    }
+  }
+
+  Future<void> _submitHospitalProfile() async {
+    context.showLoadingDialog();
+    final hospitalProvider = context.read<HospitalProvider>();
+    final payload = hospitalProvider.buildCompletePayload();
+
+    try {
+      // Step 1: Create hospital — send empty string since server expects a string type
+      payload['accreditation_doc_url'] = '';
+      final createError = await hospitalProvider.createHospital(payload);
+      if (createError != null) {
+        context.hideLoadingDialog();
+        debugPrint("General log: createHospital error: $createError");
+        if (mounted) SnackBarUtils.showError(context, createError);
+        return;
+      }
+
+      // Step 2: Upload accreditation doc using the newly created hospital ID
+      final hospitalId = hospitalProvider.hospitalProfile!.id;
+      final filePath = hospitalProvider.pickedDocFilePath;
+
+      if (filePath != null) {
+        final uploadError =
+            await hospitalProvider.uploadAccreditationDoc(filePath, hospitalId);
+        if (uploadError != null) {
+          context.hideLoadingDialog();
+          debugPrint("General log: uploadAccreditationDoc error: $uploadError");
+          if (mounted) SnackBarUtils.showError(context, uploadError);
+          return;
+        }
+
+        // Step 3: Re-call createHospital with docUrl to update the record
+        final docUrl = hospitalProvider.uploadedAccreditationUrl;
+        if (docUrl != null) {
+          payload['accreditation_doc_url'] = docUrl;
+          final updateError = await hospitalProvider.createHospital(payload,
+              hospitalId: hospitalId);
+          if (updateError != null) {
+            debugPrint("General log: doc url update error: $updateError");
+          }
+        }
+      }
+
+      context.hideLoadingDialog();
+      if (mounted) {
+        hospitalProvider.clearFormData();
+        context.goNextScreen(AppRoutes.notificationsHospital);
+      }
+    } catch (e) {
+      debugPrint("General log: Exception in _submitHospitalProfile - $e");
+      if (mounted) {
+        SnackBarUtils.showError(context, "Failed to create hospital profile");
+      }
+      context.hideLoadingDialog();
+    }
+  }
+
+  List<Map<String, dynamic>> _buildBloodInventory() {
+    final inventory = <Map<String, dynamic>>[];
+
+    if (hasBloodBank) {
+      for (var bloodType in selectedBloodTypes) {
+        final units = bloodUnitsControllers[bloodType]?.text;
+        final capacity = bloodCapacityControllers[bloodType]?.text;
+
+        if (units != null &&
+            units.isNotEmpty &&
+            capacity != null &&
+            capacity.isNotEmpty) {
+          inventory.add({
+            'blood_type': _mapBloodTypeToApi(bloodType),
+            'units_available': int.tryParse(units) ?? 0,
+            'bank_capacity': int.tryParse(capacity) ?? 0,
+          });
+        }
+      }
+    }
+
+    return inventory;
+  }
+
+  String _mapBloodTypeToApi(String bloodType) {
+    // Map UI blood types to API format (e.g., 'A+' -> 'apositive')
+    final typeMap = {
+      'A+': 'apositive',
+      'A-': 'anegative',
+      'B+': 'bpositive',
+      'B-': 'bnegative',
+      'AB+': 'abpositive',
+      'AB-': 'abnegative',
+      'O+': 'opositive',
+      'O-': 'onegative',
+    };
+    return typeMap[bloodType] ?? 'apositive';
+  }
+
+  Widget _checkbox(bool selected) {
     return Container(
       width: 20,
       height: 20,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(
           color: selected ? Colors.red : const Color(0xFFD1D5DB),
           width: 2,
         ),
+        color: selected ? Colors.red : Colors.transparent,
       ),
       child: selected
           ? const Center(
-              child: CircleAvatar(radius: 4, backgroundColor: Colors.red),
+              child: Icon(Icons.check, color: Colors.white, size: 14),
             )
           : null,
     );
   }
 
-  Widget _inputSmall(String hint) {
+  Widget _inputSmall(String hint, TextEditingController controller) {
     return Expanded(
       child: TextField(
+        controller: controller,
+        keyboardType: TextInputType.number,
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
@@ -271,16 +552,45 @@ class _BloodServicesScreenState extends State<BloodServicesScreen> {
     );
   }
 
-  Widget _timeBox() {
+  Widget _timeBox(String label, bool isStartTime) {
+    final timeValue = isStartTime ? startTime : endTime;
+
     return InkWell(
-      onTap: () {
-        SnackBarUtils.showInfo(context, "In progress");
+      onTap: () async {
+        context.hideKeyboard();
+        final selectedTime = await showTimePicker(
+          context: context,
+          initialTime: timeValue ?? TimeOfDay.now(),
+        );
+        if (selectedTime != null) {
+          setState(() {
+            if (isStartTime) {
+              startTime = selectedTime;
+            } else {
+              endTime = selectedTime;
+            }
+          });
+        }
       },
       child: Container(
         height: 44,
         alignment: Alignment.center,
         decoration: _cardDecoration(),
-        child: const Icon(Icons.access_time, color: Color(0xFF6B7280)),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.access_time, color: Color(0xFF6B7280), size: 18),
+            const SizedBox(width: 8),
+            Text(
+              timeValue != null ? timeValue.format(context) : label,
+              style: TextStyle(
+                fontSize: 13,
+                color:
+                    timeValue != null ? Colors.black : const Color(0xFF9CA3AF),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

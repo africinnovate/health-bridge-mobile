@@ -59,6 +59,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               value: 'patient',
               groupValue: selectedRole,
               onChanged: (value) {
+                var authProvider = context.read<AuthProvider>();
+                authProvider.role = value;
+                Validators.role = value;
                 setState(() => selectedRole = value);
               },
             ),
@@ -71,6 +74,8 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               value: 'donor',
               groupValue: selectedRole,
               onChanged: (value) {
+                var authProvider = context.read<AuthProvider>();
+                authProvider.role = value;
                 Validators.role = value;
                 setState(() => selectedRole = value);
               },
@@ -85,6 +90,8 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               value: 'specialist',
               groupValue: selectedRole,
               onChanged: (value) {
+                var authProvider = context.read<AuthProvider>();
+                authProvider.role = value;
                 Validators.role = value;
                 setState(() => selectedRole = value);
               },
@@ -99,6 +106,8 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               value: 'hospital',
               groupValue: selectedRole,
               onChanged: (value) {
+                var authProvider = context.read<AuthProvider>();
+                authProvider.role = value;
                 Validators.role = value;
                 setState(() => selectedRole = value);
               },

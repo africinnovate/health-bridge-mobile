@@ -38,6 +38,7 @@ class AppRoutes {
   static const String updateUnits = '/update-units';
   static const String donorList = '/donor-list';
   static const String hospitalNotification = '/hospital-notification';
+  static const String documentViewer = '/document-viewer';
 
   // Main App Routes
   static const String dashboardHospital = '/dashboard-hospital';
@@ -55,7 +56,6 @@ class AppRoutes {
   static const String filterResults = '/filter-results';
   static const String pickDateTime = '/pick-date-time';
   static const String editProfilePatient = '/edit-profile-patient';
-  static const String personalInfoPatient = '/personal-info-patient';
   static const String medicalInfoPatient = '/medical-info-patient';
   static const String consultationPreferencePatient =
       '/consultation-preference-patient';

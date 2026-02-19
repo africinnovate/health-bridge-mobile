@@ -1,8 +1,10 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/constants/app_routes.dart';
-import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/presentation/providers/blood_request_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class BloodRequestsScreen extends StatefulWidget {
   const BloodRequestsScreen({super.key});
@@ -13,6 +15,14 @@ class BloodRequestsScreen extends StatefulWidget {
 
 class _BloodRequestsScreenState extends State<BloodRequestsScreen> {
   String selectedTab = 'Active';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<BloodRequestProvider>().fetchBloodRequests();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,61 +55,50 @@ class _BloodRequestsScreenState extends State<BloodRequestsScreen> {
 
           /// Content
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  const SizedBox(height: 16),
-                  if (selectedTab == 'Active') ...[
-                    _buildRequestCard('O+', '8', '2 hours ago',
-                        'REF I 46-B11-3u25', 'Urgent', AppColors.red),
-                    const SizedBox(height: 16),
-                    _buildRequestCard(
-                        'A-',
-                        '5',
-                        '4 hours ago',
-                        'REF I 46-B11-3u26',
-                        'Pending',
-                        const Color(0xFFF59E0B)),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('O+', '5', '6 hours ago',
-                        'REF I 46-B11-3u27', 'Accepted', AppColors.green),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('AB-', '2', '10 minutes ago',
-                        'REF I 46-B11-3u28', 'Urgent', AppColors.red),
-                    const SizedBox(height: 16),
-                    _buildRequestCard(
-                        'O-',
-                        '6',
-                        '1 hours ago',
-                        'REF I 46-B11-3u30',
-                        'Pending',
-                        const Color(0xFFF59E0B)),
-                  ] else if (selectedTab == 'Fulfilled') ...[
-                    _buildRequestCard('O+', '8', '2 hours ago',
-                        'REF I 46-B11-3u25', 'Completed', AppColors.green),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('A-', '5', '4 hours ago',
-                        'REF I 46-B11-3u26', 'Completed', AppColors.green),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('B+', '5', '6 hours ago',
-                        'REF I 46-B11-3u27', 'Completed', AppColors.green),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('AB-', '2', '10 minutes ago',
-                        'REF I 46-B11-3u28', 'Completed', AppColors.green),
-                  ] else ...[
-                    _buildRequestCard('O+', '8', '2 hours ago',
-                        'REF I 46-B11-3u25', 'Canceled', AppColors.red),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('A-', '5', '4 hours ago',
-                        'REF I 46-B11-3u26', 'Canceled', AppColors.red),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('B+', '5', '6 hours ago',
-                        'REF I 46-B11-3u27', 'Canceled', AppColors.red),
-                  ],
-                  const SizedBox(height: 40),
-                ],
-              ),
+            child: Consumer<BloodRequestProvider>(
+              builder: (context, provider, _) {
+                if (provider.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final requests = selectedTab == 'Active'
+                    ? provider.activeRequests
+                    : selectedTab == 'Fulfilled'
+                        ? provider.fulfilledRequests
+                        : provider.cancelledRequests;
+
+                if (requests.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No ${selectedTab.toLowerCase()} requests',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF9CA3AF),
+                      ),
+                    ),
+                  );
+                }
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      ...requests.asMap().entries.map((entry) {
+                        final request = entry.value;
+                        final isLast = entry.key == requests.length - 1;
+                        return Column(
+                          children: [
+                            _buildRequestCard(request),
+                            if (!isLast) const SizedBox(height: 16),
+                          ],
+                        );
+                      }),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -137,26 +136,48 @@ class _BloodRequestsScreenState extends State<BloodRequestsScreen> {
     );
   }
 
-  Widget _buildRequestCard(String bloodType, String units, String time,
-      String refId, String status, Color statusColor) {
+  String _getStatusDisplayText(String? status) {
+    if (status == null) return 'Pending';
+    final lower = status.toLowerCase();
+    if (lower == 'confirmed') return 'Confirmed';
+    if (lower == 'accepted') return 'Accepted';
+    if (lower == 'completed') return 'Completed';
+    if (lower == 'cancelled') return 'Cancelled';
+    return status;
+  }
+
+  Color _getStatusColor(String? status) {
+    if (status == null) return const Color(0xFFF59E0B);
+    final lower = status.toLowerCase();
+    if (lower == 'confirmed') return const Color(0xFFF59E0B);
+    if (lower == 'accepted') return AppColors.green;
+    if (lower == 'completed') return AppColors.green;
+    if (lower == 'cancelled') return AppColors.red;
+    return const Color(0xFFF59E0B);
+  }
+
+  String _formatTimeAgo(DateTime createdAt) {
+    final now = DateTime.now();
+    final difference = now.difference(createdAt);
+
+    if (difference.inMinutes < 1) return 'just now';
+    if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
+    if (difference.inHours < 24) return '${difference.inHours}h ago';
+    if (difference.inDays < 7) return '${difference.inDays}d ago';
+    return '${createdAt.month}/${createdAt.day}/${createdAt.year}';
+  }
+
+  Widget _buildRequestCard(request) {
+    final status = _getStatusDisplayText(request.requestStatus);
+    final statusColor = _getStatusColor(request.requestStatus);
+    final timeAgo = _formatTimeAgo(request.createdAt);
+
     return GestureDetector(
-      onTap: () {
-        // Determine the detail screen status based on the current tab and status
-        String detailStatus = 'confirmed';
-        if (selectedTab == 'Fulfilled') {
-          detailStatus = 'completed';
-        } else if (selectedTab == 'Canceled') {
-          detailStatus = 'cancelled';
-        } else if (status == 'Accepted') {
-          detailStatus = 'accepted';
-        }
-        context.goNextScreenWithData(AppRoutes.requestDetails,
-            extra: detailStatus);
-      },
+      onTap: () => _navigateToDetails(request.requestStatus),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: status == 'Urgent'
+          color: request.urgency?.toLowerCase() == 'urgent'
               ? AppColors.red.withOpacity(0.1)
               : Colors.white,
           borderRadius: BorderRadius.circular(14),
@@ -184,7 +205,7 @@ class _BloodRequestsScreenState extends State<BloodRequestsScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      bloodType,
+                      request.bloodType ?? 'N/A',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -217,7 +238,7 @@ class _BloodRequestsScreenState extends State<BloodRequestsScreen> {
 
             /// Units requested
             Text(
-              '$units units requested',
+              '${request.units} units requested',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -235,7 +256,7 @@ class _BloodRequestsScreenState extends State<BloodRequestsScreen> {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  time,
+                  timeAgo,
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textGray,
@@ -243,32 +264,20 @@ class _BloodRequestsScreenState extends State<BloodRequestsScreen> {
                 ),
               ],
             ),
-            // const SizedBox(height: 8),
 
             /// Reference ID
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  refId,
+                  request.refId,
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textGray,
                   ),
                 ),
                 TextButton(
-                  onPressed: () {
-                    String detailStatus = 'confirmed';
-                    if (selectedTab == 'Fulfilled') {
-                      detailStatus = 'completed';
-                    } else if (selectedTab == 'Canceled') {
-                      detailStatus = 'cancelled';
-                    } else if (status == 'Accepted') {
-                      detailStatus = 'accepted';
-                    }
-                    context.goNextScreenWithData(AppRoutes.requestDetails,
-                        extra: detailStatus);
-                  },
+                  onPressed: () => _navigateToDetails(request.requestStatus),
                   child: const Text(
                     'View Details',
                     style: TextStyle(
@@ -284,5 +293,17 @@ class _BloodRequestsScreenState extends State<BloodRequestsScreen> {
         ),
       ),
     );
+  }
+
+  void _navigateToDetails(String? status) {
+    String detailStatus = 'confirmed';
+    if (selectedTab == 'Fulfilled') {
+      detailStatus = 'completed';
+    } else if (selectedTab == 'Canceled') {
+      detailStatus = 'cancelled';
+    } else if (status?.toLowerCase() == 'accepted') {
+      detailStatus = 'accepted';
+    }
+    context.push(AppRoutes.requestDetails, extra: detailStatus);
   }
 }

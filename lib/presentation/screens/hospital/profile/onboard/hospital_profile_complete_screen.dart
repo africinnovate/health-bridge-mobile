@@ -1,6 +1,9 @@
+import 'package:HealthBridge/core/constants/app_routes.dart';
+import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class HospitalSetupCompleteScreen extends StatelessWidget {
   const HospitalSetupCompleteScreen({super.key});
@@ -127,7 +130,7 @@ class HospitalSetupCompleteScreen extends StatelessWidget {
                 height: 52,
                 child: CustomButton(
                   onPressed: () {
-                    // TODO: Navigate to dashboard
+                    context.go(AppRoutes.hospitalRootScreen);
                   },
                   text: "Go to Dashboard",
                 ),

@@ -1,7 +1,11 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
+import 'package:HealthBridge/core/constants/app_routes.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/presentation/providers/hospital_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class HospitalProfileScreen extends StatefulWidget {
   const HospitalProfileScreen({super.key});
@@ -11,20 +15,43 @@ class HospitalProfileScreen extends StatefulWidget {
 }
 
 class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
-  // Sample blood types data
-  final List<Map<String, dynamic>> bloodTypes = [
-    {'type': 'A+', 'color': AppColors.red},
-    {'type': 'A-', 'color': AppColors.red},
-    {'type': 'B+', 'color': AppColors.green},
-    {'type': 'B-', 'color': AppColors.green},
-    {'type': 'O+', 'color': AppColors.aPlusAndABPlus},
-    {'type': 'O-', 'color': AppColors.aPlusAndABPlus},
-    {'type': 'AB+', 'color': const Color(0xFF3B82F6)},
-    {'type': 'AB-', 'color': const Color(0xFF3B82F6)},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<HospitalProvider>();
+      if (provider.hospitalProfile == null) {
+        provider.getHospitalProfile();
+      }
+    });
+  }
+
+  String _displayBloodType(String api) {
+    const map = {
+      'apositive': 'A+',
+      'anegative': 'A-',
+      'bpositive': 'B+',
+      'bnegative': 'B-',
+      'abpositive': 'AB+',
+      'abnegative': 'AB-',
+      'opositive': 'O+',
+      'onegative': 'O-',
+    };
+    return map[api] ?? api;
+  }
+
+  Color _bloodTypeColor(String displayType) {
+    if (displayType.startsWith('AB')) return const Color(0xFF3B82F6);
+    if (displayType.startsWith('A')) return AppColors.red;
+    if (displayType.startsWith('B')) return AppColors.green;
+    return AppColors.aPlusAndABPlus;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<HospitalProvider>();
+    final profile = provider.hospitalProfile;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundGray,
       body: SafeArea(
@@ -90,17 +117,17 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'City General Hospital',
-                      style: TextStyle(
+                    Text(
+                      profile?.name ?? '—',
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 6),
-                    const Text(
-                      'General Hospital',
-                      style: TextStyle(
+                    Text(
+                      profile?.hospitalType ?? '—',
+                      style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF6B7280),
                       ),
@@ -110,25 +137,28 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 6),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
+                        color: profile?.licenseStatus == true
+                            ? const Color(0xFFDCFCE7)
+                            : const Color(0xFFFEF3C7),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Text(
-                        'Verified',
+                      child: Text(
+                        profile?.licenseStatus == true ? 'Verified' : 'Pending',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.green,
+                          color: profile?.licenseStatus == true
+                              ? AppColors.green
+                              : const Color(0xFFD97706),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
 
-              /// Contact Information
-
+              /// Contact & License Information (one section, one edit button)
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -138,78 +168,63 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Contact Information',
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
+                      style: TextStyle(fontSize: 16),
                     ),
                     const SizedBox(height: 20),
                     _infoRow(
                       Icons.location_on_outlined,
                       'Address',
-                      '123 Medical Center Drive, Lagos Island, Lagos State, Nigeria',
+                      '${profile?.address ?? '—'}, ${profile?.city ?? ''}, ${profile?.country ?? ''}',
                     ),
                     const SizedBox(height: 16),
                     _infoRow(
                       Icons.phone_outlined,
                       'Phone Number',
-                      '+234802347​6400',
+                      profile?.primaryPhone ?? '—',
                     ),
                     const SizedBox(height: 16),
                     _infoRow(
                       Icons.email_outlined,
                       'Email Address',
-                      'Sarahoknkwo@gmail.com',
+                      profile?.email ?? '—',
                     ),
-                    const SizedBox(height: 16),
-                    _infoRow(
-                      Icons.emergency_outlined,
-                      'Emergency Hotline',
-                      '+234802347​6400',
-                    ),
-                    const SizedBox(height: 20),
-                    _editButton(),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              /// License Information
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'License Information',
-                      style: TextStyle(
-                        fontSize: 16,
+                    if (profile?.emergencyPhone?.isNotEmpty == true) ...[
+                      const SizedBox(height: 16),
+                      _infoRow(
+                        Icons.emergency_outlined,
+                        'Emergency Hotline',
+                        profile!.emergencyPhone!,
                       ),
+                    ],
+                    const Divider(height: 32),
+                    const Text(
+                      'License Information',
+                      style: TextStyle(fontSize: 16),
                     ),
                     const SizedBox(height: 20),
                     _infoRow(
                       Icons.description_outlined,
                       'Registration Number',
-                      'HF-LG-2019-08421',
+                      profile?.licenseNumber ?? '—',
                     ),
                     const SizedBox(height: 16),
                     _statusRow(
                       Icons.verified_outlined,
                       'License Status',
-                      'Active',
+                      profile?.licenseStatus == true ? 'Active' : 'Pending',
+                      profile?.licenseStatus == true,
                     ),
-                    const SizedBox(height: 16),
-                    _documentRow(
-                      Icons.insert_drive_file_outlined,
-                      'License Document',
-                      'View Document',
-                    ),
+                    if (profile?.accreditationDocUrl?.isNotEmpty == true) ...[
+                      const SizedBox(height: 16),
+                      _documentRow(
+                        Icons.insert_drive_file_outlined,
+                        'License Document',
+                        'View Document',
+                        profile!.accreditationDocUrl!,
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     _editButton(),
                   ],
@@ -227,61 +242,65 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Blood Services',
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
+                      style: TextStyle(fontSize: 16),
                     ),
                     const SizedBox(height: 20),
                     _statusRow(
-                      Icons.description_outlined,
+                      Icons.bloodtype_outlined,
                       'Blood Bank Status',
-                      'Active',
+                      profile?.hasBloodBank == true ? 'Active' : 'Inactive',
+                      profile?.hasBloodBank == true,
                     ),
-                    const SizedBox(height: 16),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.verified_outlined,
-                          size: 20,
-                          color: Color(0xFF6B7280),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'Available Blood Types',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF6B7280),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: bloodTypes.map((bloodType) {
-                                  return _bloodTypeBadge(
-                                    bloodType['type'] as String,
-                                    bloodType['color'] as Color,
-                                  );
-                                }).toList(),
-                              ),
-                            ],
+                    if (profile?.hasBloodBank == true &&
+                        profile!.bloodInventory.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.verified_outlined,
+                            size: 20,
+                            color: Color(0xFF6B7280),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _infoRow(
-                      Icons.access_time_outlined,
-                      'Donation Hours',
-                      'Monday - Friday: 8:00 AM - 5:00 PM',
-                    ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Available Blood Types',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF6B7280),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: profile.bloodInventory.map((inv) {
+                                    final display =
+                                        _displayBloodType(inv.bloodType);
+                                    return _bloodTypeBadge(
+                                        display, _bloodTypeColor(display));
+                                  }).toList(),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (profile?.donatingOperatingHours.isNotEmpty == true) ...[
+                      const SizedBox(height: 16),
+                      _infoRow(
+                        Icons.access_time_outlined,
+                        'Donation Hours',
+                        profile!.donatingOperatingHours,
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     _editServicesButton(),
                   ],
@@ -303,36 +322,38 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 18.0),
                       child: Text(
                         'Account',
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(fontSize: 16),
                       ),
                     ),
                     _menuItem(
                       Icons.lock_outline,
                       'Change Password',
                       Icons.chevron_right,
-                      () {
-                        SnackBarUtils.showInfo(context, "Change password");
-                      },
+                      () => context.push(AppRoutes.changePassword),
+                    ),
+                    const Divider(height: 1),
+                    _menuItem(
+                      Icons.notifications,
+                      'Notification',
+                      Icons.chevron_right,
+                      () =>
+                          context.push(AppRoutes.notificationsHospital, extra: true),
+                      // unused - notificationsSettings
                     ),
                     const Divider(height: 1),
                     _menuItem(
                       Icons.description_outlined,
                       'Terms & Conditions',
                       Icons.chevron_right,
-                      () {
-                        SnackBarUtils.showInfo(context, "Terms & Conditions");
-                      },
+                      () =>
+                          SnackBarUtils.showInfo(context, "Terms & Conditions"),
                     ),
                     const Divider(height: 1),
                     _menuItem(
                       Icons.shield_outlined,
                       'Privacy Policy',
                       Icons.chevron_right,
-                      () {
-                        SnackBarUtils.showInfo(context, "Privacy Policy");
-                      },
+                      () => SnackBarUtils.showInfo(context, "Privacy Policy"),
                     ),
                   ],
                 ),
@@ -344,9 +365,7 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                 width: double.infinity,
                 height: 50,
                 child: CustomButton(
-                  onPressed: () {
-                    SnackBarUtils.showInfo(context, "Logout");
-                  },
+                  onPressed: () => SnackBarUtils.showInfo(context, "Logout"),
                   text: 'Log Out',
                 ),
               ),
@@ -368,22 +387,15 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
+              Text(label,
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
               const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF111827),
-                ),
-              ),
+              Text(value,
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF111827))),
             ],
           ),
         ),
@@ -391,7 +403,7 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
     );
   }
 
-  Widget _statusRow(IconData icon, String label, String status) {
+  Widget _statusRow(IconData icon, String label, String status, bool active) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -401,22 +413,16 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
+              Text(label,
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
               const SizedBox(height: 4),
-              Text(
-                status,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.green,
-                ),
-              ),
+              Text(status,
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color:
+                          active ? AppColors.green : const Color(0xFFD97706))),
             ],
           ),
         ),
@@ -424,7 +430,8 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
     );
   }
 
-  Widget _documentRow(IconData icon, String label, String linkText) {
+  Widget _documentRow(
+      IconData icon, String label, String linkText, String url) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -434,18 +441,12 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
+              Text(label,
+                  style:
+                      const TextStyle(fontSize: 12, color: Color(0xFF6B7280))),
               const SizedBox(height: 4),
               GestureDetector(
-                onTap: () {
-                  SnackBarUtils.showInfo(context, "View document");
-                },
+                onTap: () => context.push(AppRoutes.documentViewer, extra: url),
                 child: Text(
                   linkText,
                   style: const TextStyle(
@@ -467,18 +468,12 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
     return Container(
       width: 42,
       height: 42,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
       child: Center(
         child: Text(
           type,
           style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+              fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
         ),
       ),
     );
@@ -488,9 +483,8 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
     return SizedBox(
       width: double.infinity,
       child: TextButton(
-        onPressed: () {
-          SnackBarUtils.showInfo(context, "Edit");
-        },
+        onPressed: () =>
+            context.push(AppRoutes.setProfileHospital, extra: true),
         style: TextButton.styleFrom(
           backgroundColor: AppColors.backgroundGray,
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -501,10 +495,9 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
         child: const Text(
           'Edit',
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary),
         ),
       ),
     );
@@ -514,9 +507,8 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
     return SizedBox(
       width: double.infinity,
       child: TextButton(
-        onPressed: () {
-          SnackBarUtils.showInfo(context, "Edit services");
-        },
+        onPressed: () =>
+            context.push(AppRoutes.bloodServiceHospital, extra: true),
         style: TextButton.styleFrom(
           backgroundColor: AppColors.backgroundGray,
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -527,10 +519,9 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
         child: const Text(
           'Edit Services',
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimary),
         ),
       ),
     );
@@ -540,14 +531,11 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
       VoidCallback onTap) {
     return ListTile(
       leading: Icon(leadingIcon, color: const Color(0xFF6B7280), size: 22),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF111827),
-        ),
-      ),
+      title: Text(title,
+          style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF111827))),
       trailing: Icon(trailingIcon, color: const Color(0xFF9CA3AF), size: 20),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

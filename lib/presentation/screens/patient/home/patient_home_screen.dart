@@ -2,9 +2,11 @@ import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/constants/app_routes.dart';
 import 'package:HealthBridge/core/utils/dialog.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/presentation/providers/patient_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../../widgets/cancel_button.dart';
 
@@ -101,100 +103,104 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundGray,
-      body: Column(
-        children: [
-          /// FIXED HEADER
-          _buildHeader(),
+      body: Consumer<PatientProvider>(
+        builder: (BuildContext context, patientProvider, Widget? child) {
+          return Column(
+            children: [
+              /// FIXED HEADER
+              _buildHeader(patientProvider),
 
-          Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 10),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 10),
 
-                  _buildHeroBanner(),
-                  const SizedBox(height: 20),
+                      _buildHeroBanner(),
+                      const SizedBox(height: 20),
 
-                  /// Quick Actions
-                  _buildQuickActions(),
-                  const SizedBox(height: 32),
+                      /// Quick Actions
+                      _buildQuickActions(),
+                      const SizedBox(height: 32),
 
-                  /// Recently Viewed
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const Text(
-                      'Recently Viewed',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                      /// Recently Viewed
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: const Text(
+                          'Recently Viewed',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _recentViewed(),
-                  const SizedBox(height: 32),
+                      const SizedBox(height: 16),
+                      _recentViewed(),
+                      const SizedBox(height: 32),
 
-                  /// Your next Appointment
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const Text(
-                      'Your next Appointment',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                      /// Your next Appointment
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: const Text(
+                          'Your next Appointment',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  _buildNextAppointmentCard(),
-                  const SizedBox(height: 12),
+                      _buildNextAppointmentCard(),
+                      const SizedBox(height: 12),
 
-                  /// Nearby Specialists
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: const Text(
-                      'Nearby Specialists',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                      /// Nearby Specialists
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: const Text(
+                          'Nearby Specialists',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.65,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 0.65,
+                          ),
+                          itemCount: specialists.length,
+                          itemBuilder: (context, index) {
+                            final specialist = specialists[index];
+                            return _specialistCard(
+                              specialist['name'] as String,
+                              specialist['specialty'] as String,
+                              specialist['rating'] as double,
+                              specialist['hours'] as String,
+                            );
+                          },
+                        ),
                       ),
-                      itemCount: specialists.length,
-                      itemBuilder: (context, index) {
-                        final specialist = specialists[index];
-                        return _specialistCard(
-                          specialist['name'] as String,
-                          specialist['specialty'] as String,
-                          specialist['rating'] as double,
-                          specialist['hours'] as String,
-                        );
-                      },
-                    ),
+                      const SizedBox(height: 40),
+                    ],
                   ),
-                  const SizedBox(height: 40),
-                ],
+                ),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(PatientProvider patientProvider) {
     return Container(
       width: double.infinity,
       color: Colors.white,
@@ -209,9 +215,12 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'Hello, Chisom',
+                  (patientProvider.patientProfileM?.firstName != null &&
+                          patientProvider.patientProfileM!.firstName!.isEmpty)
+                      ? "Incomplete profile"
+                      : 'Hello, ${patientProvider.patientProfileM?.firstName}',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

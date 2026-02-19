@@ -1,0 +1,377 @@
+import 'package:HealthBridge/core/constants/app_colors.dart';
+import 'package:HealthBridge/core/constants/app_routes.dart';
+import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
+import 'package:HealthBridge/presentation/widgets/input_text_field_wg.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../../../core/constants/app_constants.dart';
+import '../../../core/services/validation_service.dart';
+import '../../providers/auth_provider.dart';
+import '../../widgets/custom_button.dart';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool obscurePassword = true;
+  final ValidationService _validationService = ValidationService();
+
+  bool get shouldProceed =>
+      emailController.text.trim().isNotEmpty &&
+      passwordController.text.trim().isNotEmpty;
+
+  void loginUser() async {
+    context.hideKeyboard();
+    var authProvider = context.read<AuthProvider>();
+    authProvider.email = emailController.text.trim();
+    authProvider.password = passwordController.text.trim();
+
+    // final emailError = _validationService.validateEmail(authProvider.email);
+    // if (emailError != null) {
+    //   SnackBarUtils.showError(context, emailError);
+    //   return;
+    // }
+    final passwordError =
+        _validationService.validatePassword(authProvider.password);
+    if (passwordError != null) {
+      SnackBarUtils.showError(context, passwordError);
+      return;
+    }
+
+    context.showLoadingDialog();
+    // interact with provider -> register user and navigate
+    final response = await authProvider.authUser(AppConstants.login);
+    String? role = authProvider.userModel?.role;
+    String? token = authProvider.token;
+
+    if (response == null && role != null) {
+      // check if token exist (indicating email is verified)
+      if (token == null || token.isEmpty) {
+        // Email not verified, navigate to OTP verification screen
+        final authProvider = context.read<AuthProvider>();
+        await authProvider.resendOtp();
+        context.hideLoadingDialog();
+        context.goNextScreen(AppRoutes.verifyOtp);
+        return;
+      }
+
+      context.hideLoadingDialog();
+      // Success → navigate
+      if (role == "donor") {
+        context.goNextScreen(AppRoutes.donorRootScreen);
+        // context.goNextScreen(AppRoutes.donorRootScreen);
+      } else if (role == "specialist") {
+        context.goNextScreen(AppRoutes.specialistRootScreen);
+      } else if (role == "patient") {
+        context.goNextScreen(AppRoutes.patientRootScreen);
+      } else {
+        context.goNextScreen(AppRoutes.hospitalRootScreen);
+      }
+    } else {
+      // Error → show message
+      context.hideLoadingDialog();
+      SnackBarUtils.showError(context, response ?? "Role not found");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          // Use post-frame callback to avoid crash during navigation disposal
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            SystemNavigator.pop();
+          });
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: CustomAppBar(
+          onBack: () {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              SystemNavigator.pop();
+            });
+          },
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: context.hideKeyboard,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12),
+
+                /// Title
+                const Text(
+                  'Login to your account',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                /// Subtitle
+                const Text(
+                  'Join HealthBridge to request blood, donate, or connect with verified specialists.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+
+                const SizedBox(height: 28),
+
+                /// Email / Phone
+                const Text(
+                  'Email ',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                InputTextFieldWG(
+                  controller: emailController,
+                  hintText: "Enter email",
+                  onChanged: (value) => setState(() {}),
+                ),
+
+                const SizedBox(height: 18),
+
+                /// Password
+                const Text(
+                  'Password',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: passwordController,
+                  onChanged: (value) => setState(() {}),
+                  obscureText: obscurePassword,
+                  decoration: InputDecoration(
+                    hintStyle: TextStyle(
+                      color: AppColors.textGray.withOpacity(0.8),
+                      fontWeight: FontWeight.w300,
+                    ),
+                    hintText: 'Enter password',
+                    filled: true,
+                    fillColor: AppColors.backgroundGray,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: const Color(0xFF6B7280),
+                      ),
+                      onPressed: () {
+                        setState(() => obscurePassword = !obscurePassword);
+                      },
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                /// Forgot Password
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      context.push(AppRoutes.forgotPassword);
+                    },
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text(
+                      'Forgot Password?',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.red,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                /// Continue Button
+                CustomButton(
+                  onPressed: loginUser,
+                  text: "Login",
+                  shouldProceed: shouldProceed,
+                ),
+
+                const SizedBox(height: 24),
+
+                /// OR Divider
+                Row(
+                  children: const [
+                    Expanded(child: Divider()),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Text(
+                        'Or',
+                        style: TextStyle(color: Color(0xFF6B7280)),
+                      ),
+                    ),
+                    Expanded(child: Divider()),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                /// Google Button
+                SocialButton(
+                  icon: 'G',
+                  label: 'Continue with Google',
+                  onTap: () {
+                    SnackBarUtils.showInfo(
+                        context, "Google Sign-In coming soon");
+                  },
+                ),
+
+                const SizedBox(height: 12),
+
+                /// Apple Button
+                SocialButton(
+                  icon: '',
+                  label: 'Continue with Apple',
+                  onTap: () {
+                    SnackBarUtils.showInfo(
+                        context, "Apple Sign-In coming soon");
+                  },
+                ),
+
+                const SizedBox(height: 28),
+
+                /// Login
+                Center(
+                  child: RichText(
+                    text: TextSpan(
+                      style: TextStyle(fontSize: 14),
+                      children: [
+                        TextSpan(
+                          text: 'No Account Yet? ',
+                          style: TextStyle(
+                            color: AppColors.textGray,
+                          ),
+                        ),
+                        TextSpan(
+                          text: 'Register',
+                          style: TextStyle(
+                            color: AppColors.red,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              // Navigate to login screen
+                              context.push(AppRoutes.preference);
+                            },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                /// Terms
+                Center(
+                  child: Text(
+                    'By creating an account, you agree to our Terms of Use and Privacy Policy.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textGray,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ------------------------------------------------------------
+/// Social Button
+/// ------------------------------------------------------------
+class SocialButton extends StatelessWidget {
+  final String icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const SocialButton({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 52,
+        decoration: BoxDecoration(
+          color: AppColors.backgroundGray,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              icon,
+              style: const TextStyle(fontSize: 20),
+            ),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

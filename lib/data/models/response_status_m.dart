@@ -1,11 +1,11 @@
 class ResponseStatusM {
-  final int code;
+  final int status_code;
   final String? message;
   final dynamic data;
-  final int time; // Remove nullable type (since it always has a value)
+  final int time;
 
   ResponseStatusM({
-    required this.code,
+    required this.status_code,
     this.message,
     this.data,
     int? time, // Accept nullable time in the constructor
@@ -14,7 +14,7 @@ class ResponseStatusM {
 
   factory ResponseStatusM.fromJson(Map<String, dynamic> json) {
     return ResponseStatusM(
-      code: json['code'] as int,
+      status_code: json['status_code'] as int,
       message: json['message'] as String?,
       data: json['data'],
       time: json['time'] as int?, // Pass nullable time
@@ -22,7 +22,7 @@ class ResponseStatusM {
   }
 
   Map<String, dynamic> toJson() => {
-        'code': code,
+        'status_code': status_code,
         'message': message,
         'data': data,
         'time': time,
@@ -32,7 +32,7 @@ class ResponseStatusM {
   String toString() {
     return '''
     ResponseStatusM {
-      code: $code,
+      status_code: $status_code,
       message: $message,
       data: $data,
       time: $time (${DateTime.fromMillisecondsSinceEpoch(time)})

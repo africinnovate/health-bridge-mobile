@@ -1,8 +1,10 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/constants/app_routes.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/presentation/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class PatientProfileScreen extends StatefulWidget {
   const PatientProfileScreen({super.key});
@@ -64,7 +66,8 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                     children: [
                       CircleAvatar(
                         radius: 50,
-                        backgroundImage: AssetImage('assets/images/patient.png'),
+                        backgroundImage:
+                            AssetImage('assets/images/patient.png'),
                       ),
                       const SizedBox(height: 16),
                       const Text(
@@ -140,7 +143,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                 title: 'Full Name',
                 subtitle: 'Chisom Emenuel',
                 onTap: () {
-                  context.push(AppRoutes.personalInfoPatient);
+                  context.push(AppRoutes.editProfilePatient);
                 },
               ),
               _menuItem(
@@ -148,7 +151,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                 title: 'Date of Birth',
                 subtitle: 'January 15, 1995',
                 onTap: () {
-                  context.push(AppRoutes.personalInfoPatient);
+                  context.push(AppRoutes.editProfilePatient);
                 },
               ),
               _menuItem(
@@ -156,7 +159,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                 title: 'Gender',
                 subtitle: 'Male',
                 onTap: () {
-                  context.push(AppRoutes.personalInfoPatient);
+                  context.push(AppRoutes.editProfilePatient);
                 },
               ),
               _menuItem(
@@ -164,15 +167,15 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                 title: 'Blood Type',
                 subtitle: 'O+',
                 onTap: () {
-                  context.push(AppRoutes.personalInfoPatient);
+                  context.push(AppRoutes.editProfilePatient);
                 },
               ),
               _menuItem(
                 icon: Icons.location_on,
                 title: 'Address',
-                subtitle: 'Lagos, Nigeria',
+                subtitle: 'Lagos, Nigeria..',
                 onTap: () {
-                  context.push(AppRoutes.personalInfoPatient);
+                  context.push(AppRoutes.editProfilePatient);
                 },
               ),
               const SizedBox(height: 8),
@@ -303,7 +306,12 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                 icon: Icons.lock_outline,
                 title: 'Change Password',
                 subtitle: '',
-                onTap: () {
+                onTap: () async {
+                  // Refresh token in background to ensure valid token for password change
+                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                  authProvider.refreshAccessToken();
+
+                  // Navigate immediately while token refresh happens in background
                   context.push(AppRoutes.changePassword);
                 },
               ),
@@ -458,7 +466,8 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
             },
             child: const Text(
               'Log Out',
-              style: TextStyle(color: AppColors.red, fontWeight: FontWeight.w600),
+              style:
+                  TextStyle(color: AppColors.red, fontWeight: FontWeight.w600),
             ),
           ),
         ],

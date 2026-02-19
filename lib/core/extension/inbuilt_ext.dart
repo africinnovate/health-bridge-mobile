@@ -7,6 +7,10 @@ import 'package:go_router/go_router.dart';
 import '../../presentation/widgets/custom_text.dart';
 
 extension ContextExtensions on BuildContext {
+  void replaceScreen(String path) {
+    kIsWeb ? go(path) : replace(path);
+  }
+
   void goNextScreen(String path) {
     kIsWeb ? go(path) : push(path);
   }
@@ -85,6 +89,13 @@ extension ContextExtensions on BuildContext {
   void copyText({String textToCopy = ""}) {
     Clipboard.setData(ClipboardData(text: textToCopy));
     // toastMsg("Copied!");
+  }
+}
+
+extension StringExtensions on String {
+  String capitalizeFirst() {
+    if (isEmpty) return this;
+    return '${this[0].toUpperCase()}${substring(1).toLowerCase()}';
   }
 }
 
