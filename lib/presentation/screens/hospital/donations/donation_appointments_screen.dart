@@ -2,8 +2,10 @@ import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/constants/app_routes.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/presentation/providers/appointment_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class DonationAppointmentsScreen extends StatefulWidget {
   const DonationAppointmentsScreen({super.key});
@@ -15,7 +17,24 @@ class DonationAppointmentsScreen extends StatefulWidget {
 
 class _DonationAppointmentsScreenState
     extends State<DonationAppointmentsScreen> {
-  String selectedTab = 'Unconfirmed';
+  String selectedTab = 'created';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchAppointments();
+    });
+  }
+
+  Future<void> _fetchAppointments() async {
+    final provider = context.read<AppointmentProvider>();
+    final error =
+        await provider.getAppointments('donor', selectedTab);
+    if (mounted && error != null) {
+      SnackBarUtils.showError(context, error);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,73 +58,72 @@ class _DonationAppointmentsScreenState
             ),
             child: Row(
               children: [
-                _tabButton('Unconfirmed'),
-                _tabButton('Upcoming'),
-                _tabButton('Completed'),
-                _tabButton('Missed'),
+                _tabButton('created', 'Created'),
+                _tabButton('confirmed', 'Upcoming'),
+                _tabButton('completed', 'Completed'),
+                _tabButton('cancelled', 'Missed'),
               ],
             ),
           ),
 
           /// Content
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  const SizedBox(height: 16),
-                  if (selectedTab == 'Unconfirmed') ...[
-                    _buildRequestCard('A+', 'Sarah Okonkwo', 'Tomorrow, 10:00 AM',
-                        'HB-BR-3425', 'Pending', const Color(0xFFF59E0B)),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('O+', 'John Doe', 'Today, 2:00 PM',
-                        'HB-BR-3426', 'Pending', const Color(0xFFF59E0B)),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('B-', 'Jane Smith', 'Tomorrow, 3:30 PM',
-                        'HB-BR-3427', 'Pending', const Color(0xFFF59E0B)),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('AB+', 'David Wilson', 'Today, 11:00 AM',
-                        'HB-BR-3428', 'Pending', const Color(0xFFF59E0B)),
-                  ] else if (selectedTab == 'Upcoming') ...[
-                    _buildRequestCard('A+', 'Sarah Okonkwo', 'Tomorrow, 10:00 AM',
-                        'HB-BR-3425', 'Confirmed', AppColors.green),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('O-', 'Michael Brown', 'Dec 25, 9:00 AM',
-                        'HB-BR-3429', 'Confirmed', AppColors.green),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('A-', 'Emma Davis', 'Dec 26, 1:00 PM',
-                        'HB-BR-3430', 'Confirmed', AppColors.green),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('B+', 'Robert Taylor', 'Dec 27, 4:00 PM',
-                        'HB-BR-3431', 'Confirmed', AppColors.green),
-                  ] else if (selectedTab == 'Completed') ...[
-                    _buildRequestCard('O+', 'John Doe', 'Dec 20, 2:00 PM',
-                        'HB-BR-3420', 'Completed', AppColors.green),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('A+', 'Lisa Anderson', 'Dec 19, 10:30 AM',
-                        'HB-BR-3419', 'Completed', AppColors.green),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('B-', 'James Wilson', 'Dec 18, 3:00 PM',
-                        'HB-BR-3418', 'Completed', AppColors.green),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('AB-', 'Mary Johnson', 'Dec 17, 11:00 AM',
-                        'HB-BR-3417', 'Completed', AppColors.green),
-                  ] else ...[
-                    _buildRequestCard('A-', 'Tom Harris', 'Dec 15, 9:00 AM',
-                        'HB-BR-3415', 'Missed', AppColors.red),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('O+', 'Susan White', 'Dec 14, 2:30 PM',
-                        'HB-BR-3414', 'Missed', AppColors.red),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('B+', 'Kevin Martin', 'Dec 13, 11:30 AM',
-                        'HB-BR-3413', 'Missed', AppColors.red),
-                    const SizedBox(height: 16),
-                    _buildRequestCard('AB+', 'Nancy Lee', 'Dec 12, 4:00 PM',
-                        'HB-BR-3412', 'Missed', AppColors.red),
-                  ],
-                  const SizedBox(height: 40),
-                ],
-              ),
+            child: Consumer<AppointmentProvider>(
+              builder: (context, appointmentProvider, _) {
+                if (appointmentProvider.isLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                final appointments = appointmentProvider.appointments ?? [];
+
+                if (appointments.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'No appointments found',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  );
+                }
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      ...appointments.asMap().entries.map((entry) {
+                        final appointment = entry.value;
+                        final index = entry.key;
+                        final statusColor =
+                            _getStatusColor(appointment.status ?? '');
+                        final scheduledTime = appointment.scheduledTime;
+                        final formattedTime = _formatDateTime(scheduledTime);
+
+                        return Column(
+                          children: [
+                            _buildRequestCard(
+                              appointment.appointmentType.substring(0, 1).toUpperCase() +
+                                  appointment.appointmentType.substring(1),
+                              'Donor - ${appointment.userId.substring(0, 8)}',
+                              formattedTime,
+                              appointment.id,
+                              _getDisplayStatus(appointment.status ?? ''),
+                              statusColor,
+                            ),
+                            if (index < appointments.length - 1)
+                              const SizedBox(height: 16),
+                          ],
+                        );
+                      }).toList(),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -113,14 +131,15 @@ class _DonationAppointmentsScreenState
     );
   }
 
-  Widget _tabButton(String title) {
-    final isSelected = selectedTab == title;
+  Widget _tabButton(String statusValue, String displayLabel) {
+    final isSelected = selectedTab == statusValue;
     return Expanded(
       child: GestureDetector(
         onTap: () {
           setState(() {
-            selectedTab = title;
+            selectedTab = statusValue;
           });
+          _fetchAppointments();
         },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 15),
@@ -130,7 +149,7 @@ class _DonationAppointmentsScreenState
           ),
           alignment: Alignment.center,
           child: Text(
-            title,
+            displayLabel,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 11,
@@ -143,12 +162,59 @@ class _DonationAppointmentsScreenState
     );
   }
 
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'created':
+        return const Color(0xFFF59E0B);
+      case 'confirmed':
+        return AppColors.green;
+      case 'completed':
+        return AppColors.green;
+      case 'cancelled':
+        return AppColors.red;
+      case 'rescheduled':
+        return const Color(0xFF3B82F6);
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getDisplayStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'created':
+        return 'Pending';
+      case 'confirmed':
+        return 'Confirmed';
+      case 'completed':
+        return 'Completed';
+      case 'cancelled':
+        return 'Missed';
+      case 'rescheduled':
+        return 'Rescheduled';
+      default:
+        return status;
+    }
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = dateTime.difference(now);
+
+    if (difference.inDays == 0) {
+      return 'Today, ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')} ${dateTime.hour >= 12 ? 'PM' : 'AM'}';
+    } else if (difference.inDays == 1) {
+      return 'Tomorrow, ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')} ${dateTime.hour >= 12 ? 'PM' : 'AM'}';
+    } else {
+      return '${dateTime.month}/${dateTime.day}/${dateTime.year}, ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')} ${dateTime.hour >= 12 ? 'PM' : 'AM'}';
+    }
+  }
+
   Widget _buildRequestCard(String bloodType, String donorName, String time,
       String refId, String status, Color statusColor) {
     return GestureDetector(
       onTap: () {
         // Determine the detail screen status based on the current tab and status
-        String detailStatus = 'unconfirmed';
+        String detailStatus = 'Created';
         if (selectedTab == 'Upcoming' || status == 'Confirmed') {
           detailStatus = 'confirmed';
         } else if (selectedTab == 'Completed' || status == 'Completed') {
@@ -263,7 +329,7 @@ class _DonationAppointmentsScreenState
                 ),
                 TextButton(
                   onPressed: () {
-                    String detailStatus = 'unconfirmed';
+                    String detailStatus = 'Created';
                     if (selectedTab == 'Upcoming' || status == 'Confirmed') {
                       detailStatus = 'confirmed';
                     } else if (selectedTab == 'Completed' ||

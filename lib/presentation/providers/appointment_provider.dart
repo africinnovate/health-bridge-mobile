@@ -23,7 +23,17 @@ class AppointmentProvider extends ChangeNotifier {
         appointmentRepository.fetchAppointments(appointmentType, status));
 
     if (ResponseUtils.isSuccessful(res)) {
-      appointments = res.data; // If res.data returns List<AppointmentModel>
+      if (res.data == null) {
+        return 'Invalid server response';
+      }
+
+      // Parse the list of appointments
+      final List<dynamic> data = res.data is List ? res.data : [];
+      appointments = data
+          .map((json) =>
+              AppointmentModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+
       notifyListeners(); // Notify listeners of state change
       return null; // success
     }

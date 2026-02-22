@@ -156,6 +156,23 @@ class _BloodRequestsScreenState extends State<BloodRequestsScreen> {
     return const Color(0xFFF59E0B);
   }
 
+  String _convertBloodType(String? apiFormat) {
+    if (apiFormat == null) return 'N/A';
+
+    final bloodTypeMap = {
+      'apositive': 'A+',
+      'anegative': 'A-',
+      'bpositive': 'B+',
+      'bnegative': 'B-',
+      'abpositive': 'AB+',
+      'abnegative': 'AB-',
+      'opositive': 'O+',
+      'onegative': 'O-',
+    };
+
+    return bloodTypeMap[apiFormat.toLowerCase()] ?? apiFormat;
+  }
+
   String _formatTimeAgo(DateTime createdAt) {
     final now = DateTime.now();
     final difference = now.difference(createdAt);
@@ -173,7 +190,7 @@ class _BloodRequestsScreenState extends State<BloodRequestsScreen> {
     final timeAgo = _formatTimeAgo(request.createdAt);
 
     return GestureDetector(
-      onTap: () => _navigateToDetails(request.requestStatus),
+      onTap: () => _navigateToDetails(request),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -205,7 +222,7 @@ class _BloodRequestsScreenState extends State<BloodRequestsScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      request.bloodType ?? 'N/A',
+                      _convertBloodType(request.bloodType),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -269,15 +286,18 @@ class _BloodRequestsScreenState extends State<BloodRequestsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  request.refId,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textGray,
+                Expanded(
+                  child: Text(
+                    request.refId,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textGray,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 TextButton(
-                  onPressed: () => _navigateToDetails(request.requestStatus),
+                  onPressed: () => _navigateToDetails(request),
                   child: const Text(
                     'View Details',
                     style: TextStyle(
@@ -295,15 +315,12 @@ class _BloodRequestsScreenState extends State<BloodRequestsScreen> {
     );
   }
 
-  void _navigateToDetails(String? status) {
-    String detailStatus = 'confirmed';
-    if (selectedTab == 'Fulfilled') {
-      detailStatus = 'completed';
-    } else if (selectedTab == 'Canceled') {
-      detailStatus = 'cancelled';
-    } else if (status?.toLowerCase() == 'accepted') {
-      detailStatus = 'accepted';
+  void _navigateToDetails(dynamic request) async {
+    final result = await context.push(AppRoutes.requestDetails, extra: request);
+
+    // If result is true, refresh the blood requests
+    if (result == true && mounted) {
+      context.read<BloodRequestProvider>().fetchBloodRequests();
     }
-    context.push(AppRoutes.requestDetails, extra: detailStatus);
   }
 }

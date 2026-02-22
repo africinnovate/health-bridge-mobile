@@ -37,6 +37,8 @@ class AppRoutes {
   static const String recordDonation = '/record-donation';
   static const String updateUnits = '/update-units';
   static const String donorList = '/donor-list';
+  static const String donorProfile = '/donor-profile';
+  static const String hospitalDonationHistory = '/donation-history-hospital';
   static const String hospitalNotification = '/hospital-notification';
   static const String documentViewer = '/document-viewer';
 

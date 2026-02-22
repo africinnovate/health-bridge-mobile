@@ -3,16 +3,21 @@ import 'package:HealthBridge/core/constants/app_routes.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/dialog.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/data/models/blood_request/blood_request_model.dart';
+import 'package:HealthBridge/presentation/providers/hospital_provider.dart';
 import 'package:HealthBridge/presentation/widgets/cancel_button.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class RequestDetailsScreen extends StatefulWidget {
+  final BloodRequestModel? bloodRequest;
   final String status; // "confirmed", "accepted", "completed", "cancelled"
 
   const RequestDetailsScreen({
     super.key,
+    this.bloodRequest,
     this.status = "confirmed",
   });
 
@@ -21,6 +26,45 @@ class RequestDetailsScreen extends StatefulWidget {
 }
 
 class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
+  Future<void> _cancelBloodRequest() async {
+    if (widget.bloodRequest == null) return;
+
+    context.showLoadingDialog();
+
+    final hospitalProvider = context.read<HospitalProvider>();
+
+    // Build payload according to API spec
+    final payload = {
+      'request_status': 'cancelled',
+      'timeline_status': null,
+      'note': null,
+      'administered_at': null,
+      'donated_at': null,
+      'units': widget.bloodRequest!.units,
+      'urgency': widget.bloodRequest!.urgency,
+    };
+
+    final error = await hospitalProvider.updateBloodRequest(
+      widget.bloodRequest!.id,
+      payload,
+    );
+
+    context.hideLoadingDialog();
+
+    if (error != null) {
+      if (mounted) {
+        SnackBarUtils.showError(context, error);
+      }
+      return;
+    }
+
+    // Success - pop with result to indicate refresh is needed
+    if (mounted) {
+      SnackBarUtils.showSuccess(context, "Request cancelled successfully");
+      Navigator.pop(context, true); // Return true to indicate refresh is needed
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,9 +162,8 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                         "Are you sure you want to cancel this blood request? This action cannot be undone.",
                     confirmText: "Yes, Cancel Request",
                     cancelText: "Keep Request",
-                    onConfirm: () {
-                      SnackBarUtils.showSuccess(context, "Request cancelled");
-                      context.goBack();
+                    onConfirm: () async {
+                      await _cancelBloodRequest();
                     },
                   );
                 },
@@ -171,7 +214,50 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
     }
   }
 
+  String _convertBloodType(String? apiFormat) {
+    if (apiFormat == null) return 'N/A';
+
+    final bloodTypeMap = {
+      'apositive': 'A+',
+      'anegative': 'A-',
+      'bpositive': 'B+',
+      'bnegative': 'B-',
+      'abpositive': 'AB+',
+      'abnegative': 'AB-',
+      'opositive': 'O+',
+      'onegative': 'O-',
+    };
+
+    return bloodTypeMap[apiFormat.toLowerCase()] ?? apiFormat;
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = dateTime.difference(now);
+
+    if (difference.inDays == 0) {
+      return 'Today, ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')} ${dateTime.hour >= 12 ? 'PM' : 'AM'}';
+    } else if (difference.inDays == 1) {
+      return 'Tomorrow, ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')} ${dateTime.hour >= 12 ? 'PM' : 'AM'}';
+    } else {
+      return '${dateTime.month}/${dateTime.day}/${dateTime.year}, ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')} ${dateTime.hour >= 12 ? 'PM' : 'AM'}';
+    }
+  }
+
   Widget _buildInfoSection() {
+    if (widget.bloodRequest == null) {
+      return const SizedBox.shrink();
+    }
+
+    final req = widget.bloodRequest!;
+    final bloodType = _convertBloodType(req.bloodType);
+    final preferredTime = req.preferredTime != null
+        ? _formatDateTime(req.preferredTime!)
+        : 'Not specified';
+    final urgency = (req.urgency ?? '').isNotEmpty
+        ? req.urgency![0].toUpperCase() + req.urgency!.substring(1)
+        : 'Standard';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -180,23 +266,35 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       ),
       child: Column(
         children: [
-          _infoRow('Blood Type:', 'O+'),
+          _infoRow('Blood Type:', bloodType),
           const SizedBox(height: 16),
-          _infoRow('Units Requested', '8 units'),
+          _infoRow('Units Requested', '${req.units} units'),
           const SizedBox(height: 16),
-          _infoRow('Urgency:', 'Urgent'),
+          _infoRow('Urgency:', urgency),
           const SizedBox(height: 16),
-          _infoRow('Reason:', 'Emergency surgery'),
+          _infoRow('Reason:', req.requestReason ?? 'Not specified'),
           const SizedBox(height: 16),
-          _infoRow('Preferred Time:', 'Today, 3:00 PM'),
+          _infoRow('Preferred Time:', preferredTime),
           const SizedBox(height: 16),
-          _infoRow('Reference ID:', 'HB-BR-3421'),
+          _infoRow('Reference ID:', req.refId),
         ],
       ),
     );
   }
 
   Widget _buildCancelledInfoSection() {
+    if (widget.bloodRequest == null) {
+      return const SizedBox.shrink();
+    }
+
+    final req = widget.bloodRequest!;
+    final bloodType = _convertBloodType(req.bloodType);
+    final createdDate =
+        '${req.createdAt.month}/${req.createdAt.day}/${req.createdAt.year}, ${req.createdAt.hour}:${req.createdAt.minute.toString().padLeft(2, '0')}';
+    final urgency = (req.urgency ?? '').isNotEmpty
+        ? req.urgency![0].toUpperCase() + req.urgency!.substring(1)
+        : 'Standard';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -205,23 +303,32 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       ),
       child: Column(
         children: [
-          _infoRow('Blood Type:', 'O+'),
+          _infoRow('Blood Type:', bloodType),
           const SizedBox(height: 16),
-          _infoRow('Units Requested', '8 units'),
+          _infoRow('Units Requested', '${req.units} units'),
           const SizedBox(height: 16),
-          _infoRow('Urgency:', 'Urgent'),
+          _infoRow('Urgency:', urgency),
           const SizedBox(height: 16),
-          _infoRow('Reason:', 'Emergency surgery'),
+          _infoRow('Reason:', req.requestReason ?? 'Not specified'),
           const SizedBox(height: 16),
-          _infoRow('Requested On:', '12 Feb 2025, 3:20 PM'),
+          _infoRow('Requested On:', createdDate),
           const SizedBox(height: 16),
-          _infoRow('Reference ID:', 'HB-BR-3421'),
+          _infoRow('Reference ID:', req.refId),
         ],
       ),
     );
   }
 
   Widget _buildCancellationDetails() {
+    if (widget.bloodRequest == null) {
+      return const SizedBox.shrink();
+    }
+
+    final req = widget.bloodRequest!;
+    final cancelledDate = req.cancelledAt != null
+        ? '${req.cancelledAt!.month}/${req.cancelledAt!.day}/${req.cancelledAt!.year}, ${req.cancelledAt!.hour}:${req.cancelledAt!.minute.toString().padLeft(2, '0')}'
+        : 'Not specified';
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -230,11 +337,12 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       ),
       child: Column(
         children: [
-          _infoRow('Cancelled By:', 'Hospital Admin'),
+          _infoRow('Cancelled By:', req.cancelledBy ?? 'Hospital Admin'),
           const SizedBox(height: 16),
-          _infoRow('Cancelled On:', '12 Feb 2025, 4:45 PM'),
+          _infoRow('Cancelled On:', cancelledDate),
           const SizedBox(height: 16),
-          _infoRow('Cancellation Reason:', 'Request no longer needed'),
+          _infoRow(
+              'Cancellation Reason:', req.cancelledReason ?? 'Not specified'),
         ],
       ),
     );
@@ -268,6 +376,12 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
   }
 
   Widget _buildTimeline() {
+    if (widget.bloodRequest == null) {
+      return const SizedBox.shrink();
+    }
+
+    final req = widget.bloodRequest!;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -275,120 +389,64 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
       ),
       child: Column(
         children: [
-          if (widget.status == 'confirmed') ...[
-            _timelineItem(
-              isCompleted: true,
-              title: 'Request Created',
-              description: 'Hospital submitted this request.',
-              time: '2 hours ago',
-            ),
-            _timelineItem(
-              isCompleted: true,
-              title: 'Visible to Donors',
-              description: 'Nearby donors can now respond.',
-              time: '1 hour ago',
-            ),
-            _timelineItem(
-              isCompleted: false,
-              number: 3,
-              title: 'Request Updated',
-              description: 'Units counted toward total required.',
-              time: 'Pending',
-            ),
-          ] else if (widget.status == 'accepted') ...[
-            _timelineItem(
-              isCompleted: true,
-              title: 'Request Created',
-              description: 'Hospital submitted this request.',
-              time: '2 hours ago',
-            ),
-            _timelineItem(
-              isCompleted: true,
-              title: 'Visible to Donors',
-              description: 'Nearby donors can now respond.',
-              time: '1 hour ago',
-            ),
-            _timelineItem(
-              isCompleted: true,
-              title: 'Donation Appointment Scheduled',
-              description: 'Donor 1 set a date/time to donate.',
-              time: '1 hour ago',
-            ),
-            _timelineItem(
-              isCompleted: true,
-              title: 'Donation Appointment Scheduled',
-              description: 'Donor 2 set a date/time to donate.',
-              time: '1 hour ago',
-            ),
-            _timelineItem(
-              isCompleted: true,
-              title: 'Donation Appointment Scheduled',
-              description: 'Donor 3 set a date/time to donate.',
-              time: '1 hour ago',
-            ),
+          _timelineItem(
+            isCompleted: true,
+            title: 'Request Created',
+            description: 'Hospital submitted this blood request.',
+            time: _getTimeAgo(req.createdAt),
+          ),
+          const SizedBox(height: 0),
+          _timelineItem(
+            isCompleted: req.timelineStatus != null &&
+                (req.timelineStatus == 'visible_to_donors' ||
+                    req.timelineStatus == 'donation_appointment_scheduled' ||
+                    req.timelineStatus == 'donation_completed' ||
+                    req.timelineStatus == 'request_fulfilled'),
+            title: 'Visible to Donors',
+            description: 'Nearby donors can now respond to this request.',
+            time: req.timelineStatus != null &&
+                    (req.timelineStatus == 'visible_to_donors' ||
+                        req.timelineStatus ==
+                            'donation_appointment_scheduled' ||
+                        req.timelineStatus == 'donation_completed' ||
+                        req.timelineStatus == 'request_fulfilled')
+                ? _getTimeAgo(req.createdAt)
+                : 'Pending',
+          ),
+          const SizedBox(height: 0),
+          if (req.donatedAt != null) ...[
             _timelineItem(
               isCompleted: true,
               title: 'Donation Completed',
-              description: 'Donor 1 donated 250ml successfully 600ml left',
-              time: '20 mins ago',
-              highlightText: '600ml',
+              description:
+                  'Blood units have been donated and collected successfully.',
+              time: _getTimeAgo(req.donatedAt!),
             ),
-            _timelineItem(
-              isCompleted: false,
-              number: 7,
-              title: 'Request Updated',
-              description: 'Units counted toward total required.',
-              time: 'Pending',
-            ),
-          ] else if (widget.status == 'completed') ...[
+            const SizedBox(height: 0),
+          ],
+          if (req.administeredAt != null) ...[
             _timelineItem(
               isCompleted: true,
-              title: 'Request Created',
-              description: 'Hospital submitted this request.',
-              time: '2 hours ago',
+              title: 'Blood Administered',
+              description: 'Blood units have been administered to the patient.',
+              time: _getTimeAgo(req.administeredAt!),
+              isLast: true,
             ),
-            _timelineItem(
-              isCompleted: true,
-              title: 'Visible to Donors',
-              description: 'Nearby donors can now respond.',
-              time: '1 hour ago',
-            ),
-            _timelineItem(
-              isCompleted: true,
-              title: 'Donation Appointment Scheduled',
-              description: 'Donor 1 set a date/time to donate.',
-              time: '1 hour ago',
-            ),
-            _timelineItem(
-              isCompleted: true,
-              title: 'Donation Appointment Scheduled',
-              description: 'Donor 2 set a date/time to donate.',
-              time: '1 hour ago',
-            ),
-            _timelineItem(
-              isCompleted: true,
-              title: 'Donation Appointment Scheduled',
-              description: 'Donor 3 set a date/time to donate.',
-              time: '1 hour ago',
-            ),
-            _timelineItem(
-              isCompleted: true,
-              title: 'Donation Completed (Donor 1)',
-              description: 'Donor 1 donated 250ml successfully 600ml left',
-              time: '20 mins ago',
-              highlightText: '600ml',
-            ),
-            _timelineItem(
-              isCompleted: true,
-              title: 'Request Progress Updated',
-              description: 'Fulfilled.',
-              time: '20 mins ago',
-            ),
+          ] else if (req.requestStatus?.toLowerCase() == 'completed') ...[
             _timelineItem(
               isCompleted: true,
               title: 'Request Fulfilled',
               description:
-                  'All required units have now been collected from one or multiple donors.',
+                  'All required units have been collected and completed.',
+              time: 'Completed',
+              isLast: true,
+            ),
+          ] else ...[
+            _timelineItem(
+              isCompleted: false,
+              // number: 3,
+              title: 'Awaiting Completion',
+              description: 'Waiting for blood donations to be collected.',
               time: 'Pending',
               isLast: true,
             ),
@@ -396,6 +454,23 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
         ],
       ),
     );
+  }
+
+  String _getTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return 'just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}d ago';
+    } else {
+      return '${dateTime.month}/${dateTime.day}/${dateTime.year}';
+    }
   }
 
   Widget _timelineItem({
@@ -419,9 +494,8 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                 width: 24,
                 height: 24,
                 decoration: BoxDecoration(
-                  color: isCompleted
-                      ? AppColors.green
-                      : const Color(0xFFF3F4F6),
+                  color:
+                      isCompleted ? AppColors.green : const Color(0xFFF3F4F6),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -471,7 +545,8 @@ class _RequestDetailsScreenState extends State<RequestDetailsScreen> {
                       fontSize: 13,
                       color: Color(0xFF6B7280),
                     ),
-                    children: _buildDescriptionSpans(description, highlightText),
+                    children:
+                        _buildDescriptionSpans(description, highlightText),
                   ),
                 ),
                 const SizedBox(height: 4),

@@ -1,3 +1,6 @@
+import 'package:HealthBridge/data/models/donor/donor_model.dart';
+import 'package:HealthBridge/data/models/donor/donor_stats_model.dart';
+import 'package:HealthBridge/data/models/donor/donation_history_model.dart';
 import 'package:HealthBridge/presentation/screens/auth/create_account_screen.dart';
 import 'package:HealthBridge/presentation/screens/auth/forgot_password_screen.dart';
 import 'package:HealthBridge/presentation/screens/auth/logic_screen.dart';
@@ -38,7 +41,10 @@ import '../../presentation/screens/general/profile/privacy_settings_screen.dart'
 import '../../presentation/screens/hospital/donations/donation_appointment_detail_screen.dart';
 import '../../presentation/screens/hospital/donations/record_donation_screen.dart';
 import '../../presentation/screens/hospital/donations/reschedule_appointment_screen.dart';
+import '../../presentation/screens/hospital/donors/donation_history_screen.dart'
+    as hospital;
 import '../../presentation/screens/hospital/donors/donor_list_screen.dart';
+import '../../presentation/screens/hospital/donors/donor_profile_screen.dart';
 import '../../presentation/screens/hospital/hospital_root_screen.dart';
 import '../../presentation/screens/hospital/inventory/update_units_screen.dart';
 import '../../presentation/screens/hospital/notifications/hospital_notification_screen.dart';
@@ -306,8 +312,12 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.requestDetails,
         builder: (context, state) {
-          final status = state.extra as String? ?? "confirmed";
-          return RequestDetailsScreen(status: status);
+          final bloodRequest = state.extra as dynamic;
+          final status = bloodRequest?.requestStatus?.toLowerCase() ?? 'confirmed';
+          return RequestDetailsScreen(
+            bloodRequest: bloodRequest,
+            status: status,
+          );
         },
       ),
       GoRoute(
@@ -335,6 +345,24 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.donorList,
         builder: (context, state) => DonorListScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.donorProfile,
+        builder: (context, state) {
+          final donor = state.extra as DonorModel;
+          return DonorProfileScreen(donor: donor);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.hospitalDonationHistory,
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>;
+          return hospital.DonationHistoryScreen(
+            donor: data['donor'] as DonorModel,
+            history: List<DonationHistoryModel>.from(data['history']),
+            stats: data['stats'] as DonorStatsModel?,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.hospitalNotification,

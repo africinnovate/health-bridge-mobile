@@ -1,12 +1,27 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/constants/app_routes.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
-import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/data/models/appointment/appointment_model.dart';
+import 'package:HealthBridge/presentation/providers/appointment_provider.dart';
+import 'package:HealthBridge/presentation/providers/hospital_provider.dart';
 import 'package:HealthBridge/presentation/widgets/AppSvg.dart';
 import 'package:HealthBridge/presentation/widgets/app_image.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:HealthBridge/presentation/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+class _ActivityIconData {
+  final IconData icon;
+  final Color color;
+  final Color bgColor;
+
+  _ActivityIconData({
+    required this.icon,
+    required this.color,
+    required this.bgColor,
+  });
+}
 
 class HospitalHomeScreen extends StatefulWidget {
   final Function(int)? onNavigateToTab;
@@ -18,6 +33,147 @@ class HospitalHomeScreen extends StatefulWidget {
 }
 
 class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
+  String selectedPeriod = 'This week';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadData();
+    });
+  }
+
+  Future<void> _loadData() async {
+    final hospitalProvider = context.read<HospitalProvider>();
+    final appointmentProvider = context.read<AppointmentProvider>();
+
+    // Fetch dashboard stats for blood requests and urgent count
+    await hospitalProvider.getHospitalDashboardStats();
+    // Fetch recent activity
+    await hospitalProvider.getHospitalRecentActivity();
+    // Still fetch appointments for period filtering
+    await appointmentProvider.getAppointments('hospital', 'confirmed');
+  }
+
+  int _getFilteredAppointmentCount(List<AppointmentModel>? appointments) {
+    if (appointments == null || appointments.isEmpty) return 0;
+
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+
+    return appointments.where((apt) {
+      final aptDate = apt.scheduledTime;
+      switch (selectedPeriod) {
+        case 'This week':
+          final startOfWeek = startOfToday
+              .subtract(Duration(days: startOfToday.weekday - 1));
+          final endOfWeek = startOfWeek.add(const Duration(days: 6));
+          return aptDate.isAfter(startOfWeek) && aptDate.isBefore(endOfWeek);
+        case 'This month':
+          return aptDate.month == now.month && aptDate.year == now.year;
+        case 'All time':
+          return true;
+        default:
+          return true;
+      }
+    }).length;
+  }
+
+  void _showPeriodMenu() {
+    showMenu<String>(
+      context: context,
+      position: const RelativeRect.fromLTRB(0, 0, 0, 0),
+      items: [
+        const PopupMenuItem(
+          value: 'This week',
+          child: Text('This week'),
+        ),
+        const PopupMenuItem(
+          value: 'This month',
+          child: Text('This month'),
+        ),
+        const PopupMenuItem(
+          value: 'All time',
+          child: Text('All time'),
+        ),
+      ],
+    ).then((value) {
+      if (value != null) {
+        setState(() {
+          selectedPeriod = value;
+        });
+      }
+    });
+  }
+
+  _ActivityIconData _getActivityIcon(String activityType) {
+    switch (activityType.toLowerCase()) {
+      case 'blood_request_accepted':
+      case 'blood_request_fulfilled':
+      case 'donation_completed':
+        return _ActivityIconData(
+          icon: Icons.check_circle,
+          color: AppColors.green,
+          bgColor: const Color(0xFFDCFCE7),
+        );
+      case 'appointment_scheduled':
+      case 'appointment_reminder':
+        return _ActivityIconData(
+          icon: Icons.calendar_month,
+          color: const Color(0xFF8B5CF6),
+          bgColor: const Color(0xFFF3E8FF),
+        );
+      case 'inventory_warning':
+      case 'low_stock':
+        return _ActivityIconData(
+          icon: Icons.warning_rounded,
+          color: const Color(0xFFF59E0B),
+          bgColor: const Color(0xFFFEF3C7),
+        );
+      case 'blood_request_created':
+      case 'new_request':
+        return _ActivityIconData(
+          icon: Icons.water_drop,
+          color: AppColors.red,
+          bgColor: const Color(0xFFFFE4E6),
+        );
+      case 'appointment_cancelled':
+      case 'blood_request_cancelled':
+        return _ActivityIconData(
+          icon: Icons.cancel,
+          color: Colors.red,
+          bgColor: const Color(0xFFFFE4E6),
+        );
+      default:
+        return _ActivityIconData(
+          icon: Icons.info_outline,
+          color: const Color(0xFF3B82F6),
+          bgColor: const Color(0xFFDBeafe),
+        );
+    }
+  }
+
+  String _getTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays > 365) {
+      final years = (difference.inDays / 365).floor();
+      return '$years ${years == 1 ? 'year' : 'years'} ago';
+    } else if (difference.inDays > 30) {
+      final months = (difference.inDays / 30).floor();
+      return '$months ${months == 1 ? 'month' : 'months'} ago';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'} ago';
+    } else {
+      return 'just now';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,45 +183,58 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
           /// fix header
           _buildHeader(),
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 12),
+            child: RefreshIndicator(
+              onRefresh: _loadData,
+              color: AppColors.red,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
 
                   /// Stats Cards
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _buildStatCard(
-                            icon: Icon(
-                              Icons.water_drop,
-                              color: AppColors.white,
-                              size: 24,
+                    child: Consumer<HospitalProvider>(
+                      builder: (context, hospitalProvider, _) {
+                        final activeCount =
+                            hospitalProvider.dashboardStats?.activeBloodRequests ?? 0;
+                        final urgentCount =
+                            hospitalProvider.dashboardStats?.urgentRequestsNearby ?? 0;
+
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: _buildStatCard(
+                                icon: Icon(
+                                  Icons.water_drop,
+                                  color: AppColors.white,
+                                  size: 24,
+                                ),
+                                number: activeCount.toString(),
+                                label: 'Active Blood Requests',
+                                textColor: AppColors.white,
+                                backgroundColor: AppColors.red,
+                                onTap: () {
+                                  // Navigate to Request tab (index 1)
+                                  widget.onNavigateToTab?.call(1);
+                                },
+                              ),
                             ),
-                            number: '3',
-                            label: 'Active Blood Requests',
-                            textColor: AppColors.white,
-                            backgroundColor: AppColors.red,
-                            onTap: () {
-                              // Navigate to Request tab (index 1)
-                              widget.onNavigateToTab?.call(1);
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildStatCard(
-                            icon: AppImage("assets/images/warning.png"),
-                            number: '2',
-                            label: 'Urgent Requests Nearby',
-                            textColor: AppColors.textPrimary,
-                            backgroundColor: AppColors.white,
-                          ),
-                        ),
-                      ],
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildStatCard(
+                                icon: AppImage("assets/images/warning.png"),
+                                number: urgentCount.toString(),
+                                label: 'Urgent Requests',
+                                textColor: AppColors.textPrimary,
+                                backgroundColor: AppColors.white,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -73,18 +242,27 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
                   /// Small Stats
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _appointmentCard(
-                            count: 8,
-                            period: "This week",
-                            onPeriodTap: () {},
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(child: SizedBox.shrink()),
-                      ],
+                    child: Consumer<AppointmentProvider>(
+                      builder: (context, appointmentProvider, _) {
+                        final appointmentCount = _getFilteredAppointmentCount(
+                            appointmentProvider.appointments);
+
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: _appointmentCard(
+                                count: appointmentCount,
+                                period: selectedPeriod,
+                                onPeriodTap: () {
+                                  _showPeriodMenu();
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(child: SizedBox.shrink()),
+                          ],
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -104,46 +282,79 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
 
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Column(
-                        children: [
-                          _activityItem(
-                            icon: Icons.check_circle,
-                            iconColor: AppColors.green,
-                            iconBg: const Color(0xFFDCFCE7),
-                            title: 'Your request for O+ was accepted',
-                            time: '2 hours ago',
+                    child: Consumer<HospitalProvider>(
+                      builder: (context, hospitalProvider, _) {
+                        final activities = hospitalProvider.recentActivities;
+
+                        if (activities.isEmpty) {
+                          return Container(
+                            padding: const EdgeInsets.all(40),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.history,
+                                    size: 48,
+                                    color: Colors.grey[300],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'No recent activity',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[500],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'You\'re all caught up!',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          const Divider(height: 1),
-                          _activityItem(
-                            icon: Icons.calendar_month,
-                            iconColor: const Color(0xFF8B5CF6),
-                            iconBg: const Color(0xFFF3E8FF),
-                            title: 'Donation scheduled for 5:00 PM today',
-                            time: '4 hours ago',
+                          child: Column(
+                            children: List.generate(
+                              activities.length,
+                              (index) {
+                                final activity = activities[index];
+                                final isLast = index == activities.length - 1;
+                                final iconData =
+                                    _getActivityIcon(activity.activityType);
+
+                                return Column(
+                                  children: [
+                                    _activityItem(
+                                      icon: iconData.icon,
+                                      iconColor: iconData.color,
+                                      iconBg: iconData.bgColor,
+                                      title: activity.description,
+                                      time: _getTimeAgo(activity.timestamp),
+                                    ),
+                                    if (!isLast) const Divider(height: 1),
+                                  ],
+                                );
+                              },
+                            ),
                           ),
-                          const Divider(height: 1),
-                          _activityItem(
-                            icon: Icons.warning_rounded,
-                            iconColor: const Color(0xFFF59E0B),
-                            iconBg: const Color(0xFFFEF3C7),
-                            title: 'O- stock is running low',
-                            time: '6 hours ago',
-                          ),
-                          const Divider(height: 1),
-                          _activityItem(
-                            icon: Icons.check_circle,
-                            iconColor: AppColors.green,
-                            iconBg: const Color(0xFFDCFCE7),
-                            title: 'Blood request marked as fulfilled',
-                            time: '7 days ago',
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -185,8 +396,7 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
                                 icon: Icons.water_drop_outlined,
                                 label: 'Record Donation',
                                 onTap: () {
-                                  SnackBarUtils.showInfo(
-                                      context, "in progress");
+                                  widget.onNavigateToTab?.call(2);
                                 },
                               ),
                             ),
@@ -200,8 +410,7 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
                                 icon: Icons.edit_outlined,
                                 label: 'Update Units',
                                 onTap: () {
-                                  SnackBarUtils.showInfo(
-                                      context, "in progress");
+                                  widget.onNavigateToTab?.call(3);
                                 },
                               ),
                             ),
@@ -211,8 +420,7 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
                                 icon: Icons.list_alt_outlined,
                                 label: 'Donor List',
                                 onTap: () {
-                                  SnackBarUtils.showInfo(
-                                      context, "in progress");
+                                  context.goNextScreen(AppRoutes.donorList);
                                 },
                               ),
                             ),
@@ -226,7 +434,8 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
               ),
             ),
           ),
-        ],
+        ),
+      ],
       ),
     );
   }
@@ -241,19 +450,26 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
+              children: [
+                const Text(
                   'Welcome Back',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppColors.textGray,
                   ),
                 ),
-                SizedBox(height: 2),
-                CustomText(
-                  text: "City General Hospital",
-                  size: 16,
-                  shouldBold: true,
+                const SizedBox(height: 2),
+                Consumer<HospitalProvider>(
+                  builder: (context, hospitalProvider, _) {
+                    final hospitalName =
+                        hospitalProvider.hospitalProfile?.name ??
+                            'Hospital';
+                    return CustomText(
+                      text: hospitalName,
+                      size: 16,
+                      shouldBold: true,
+                    );
+                  },
                 )
               ],
             ),

@@ -1,7 +1,12 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
+import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/data/models/hospital/hospital_model.dart';
+import 'package:HealthBridge/presentation/providers/hospital_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class UpdateUnitsScreen extends StatefulWidget {
   final String bloodType;
@@ -15,59 +20,152 @@ class UpdateUnitsScreen extends StatefulWidget {
 class _UpdateUnitsScreenState extends State<UpdateUnitsScreen> {
   int newUnitCount = 5;
 
+  String _formatBloodType(String bloodType) {
+    // Convert API format to display format
+    switch (bloodType.toLowerCase()) {
+      case 'apositive':
+        return 'A+';
+      case 'anegative':
+        return 'A-';
+      case 'bpositive':
+        return 'B+';
+      case 'bnegative':
+        return 'B-';
+      case 'opositive':
+        return 'O+';
+      case 'onegative':
+        return 'O-';
+      case 'abpositive':
+        return 'AB+';
+      case 'abnegative':
+        return 'AB-';
+      default:
+        return bloodType; // Return as-is if already formatted
+    }
+  }
+
+  Color _getBloodTypeColor(String bloodType) {
+    final formatted = _formatBloodType(bloodType);
+    switch (formatted) {
+      case 'A+':
+      case 'AB+':
+        return AppColors.aPlusAndABPlus;
+      case 'A-':
+      case 'AB-':
+        return const Color(0xFF5B6B9D);
+      case 'B+':
+      case 'B-':
+        return AppColors.red;
+      case 'O+':
+      case 'O-':
+        return AppColors.green;
+      default:
+        return const Color(0xFF3B82F6);
+    }
+  }
+
+  String _getTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays > 365) {
+      final years = (difference.inDays / 365).floor();
+      return '$years ${years == 1 ? 'year' : 'years'} ago';
+    } else if (difference.inDays > 30) {
+      final months = (difference.inDays / 30).floor();
+      return '$months ${months == 1 ? 'month' : 'months'} ago';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'} ago';
+    } else {
+      return 'just now';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundGray,
-      appBar: const CustomAppBar(
-        title: 'Update Units',
-        showArrow: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 24),
+    return Consumer<HospitalProvider>(
+      builder: (context, hospitalProvider, _) {
+        final bloodInventory = hospitalProvider.hospitalProfile?.bloodInventory ?? [];
+        final inventoryItem = bloodInventory.firstWhere(
+          (item) => item.bloodType == widget.bloodType,
+          orElse: () => BloodInventory(
+            bankCapacity: 0,
+            bloodType: widget.bloodType,
+            hospitalId: '',
+            id: '',
+            unitsAvailable: 0,
+            updatedAt: DateTime.now(),
+          ),
+        );
 
-            /// Blood Type Circle
-            Container(
-              width: 100,
-              height: 100,
-              decoration: const BoxDecoration(
-                color: Color(0xFF3B82F6),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  widget.bloodType,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
+        // Initialize newUnitCount with current units on first build
+        if (newUnitCount == 5) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            setState(() {
+              newUnitCount = inventoryItem.unitsAvailable;
+            });
+          });
+        }
+
+        final color = _getBloodTypeColor(widget.bloodType);
+        final formattedBloodType = _formatBloodType(widget.bloodType);
+        final lastUpdated = _getTimeAgo(inventoryItem.updatedAt);
+
+        return Scaffold(
+          backgroundColor: AppColors.backgroundGray,
+          appBar: const CustomAppBar(
+            title: 'Update Units',
+            showArrow: true,
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 24),
+
+                /// Blood Type Circle
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      formattedBloodType,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-            /// Current Units
-            const Text(
-              '18 units',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Units updated 4 days ago',
-              style: TextStyle(
-                fontSize: 13,
-                color: Color(0xFF9CA3AF),
-              ),
-            ),
-            const SizedBox(height: 40),
+                /// Current Units
+                Text(
+                  '${inventoryItem.unitsAvailable} units',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Units updated $lastUpdated',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF9CA3AF),
+                  ),
+                ),
+                const SizedBox(height: 40),
 
             /// New Unit Count Label
             const Text(
@@ -134,8 +232,13 @@ class _UpdateUnitsScreenState extends State<UpdateUnitsScreen> {
               width: double.infinity,
               height: 50,
               child: CustomButton(
-                onPressed: () {
-                  _showSuccessDialog();
+                onPressed: () async {
+                  await _saveChanges(
+                    context,
+                    inventoryItem.hospitalId,
+                    inventoryItem.bloodType,
+                    inventoryItem.bankCapacity,
+                  );
                 },
                 text: 'Save Changes',
               ),
@@ -155,11 +258,44 @@ class _UpdateUnitsScreenState extends State<UpdateUnitsScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
+                const SizedBox(height: 40),
+              ],
+            ),
+          ),
+        );
+      },
     );
+  }
+
+  Future<void> _saveChanges(
+    BuildContext context,
+    String hospitalId,
+    String bloodType,
+    int bankCapacity,
+  ) async {
+    context.showLoadingDialog();
+
+    final hospitalProvider = context.read<HospitalProvider>();
+    final error = await hospitalProvider.updateBloodInventory(
+      hospitalId,
+      bloodType,
+      bankCapacity,
+      newUnitCount,
+    );
+
+    context.hideLoadingDialog();
+
+    if (error != null) {
+      if (mounted) {
+        SnackBarUtils.showError(context, error);
+      }
+      return;
+    }
+
+    // Show success dialog
+    if (mounted) {
+      _showSuccessDialog();
+    }
   }
 
   void _showSuccessDialog() {

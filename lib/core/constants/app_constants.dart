@@ -67,7 +67,8 @@ class AppConstants {
   static const String specialtiesEP = '/api/specialists/specialties';
 
   /// /api/hospitals/{hospital_id}
-  static const String hospitalProfileEP = '/api/hospitals';
+  static const String hospitalProfileByIdEP = '/api/hospitals';
+  static const String hospitalProfileEP = '/api/hospitals/me';
 
   /// /api/appointments
   static const String appointmentsEP = '/api/appointments';
@@ -77,6 +78,30 @@ class AppConstants {
 
   /// /api/hospitals/settings/{hospital_id}  -get hospital notification settings
   static const String hospitalNotificationSettingEP = "/api/hospitals/settings";
+
+  /// /api/hospitals/blood-request - get and create blood requests
+  static const String bloodRequestEP = "/api/hospitals/blood-request";
+
+  /// /api/hospitals/inventory/{hospital_id}/{blood_type} - update blood inventory units
+  static const String updateBloodInventoryEP = "/api/hospitals/inventory";
+
+  /// /api/hospitals/dashboard/stats - get hospital dashboard stats
+  static const String hospitalDashboardStatsEP = "/api/hospitals/dashboard/stats";
+
+  /// /api/hospitals/dashboard/recent-activity - get hospital recent activity
+  static const String hospitalRecentActivityEP = "/api/hospitals/dashboard/recent-activity";
+
+  /// /api/hospitals/donors - get donor list
+  static const String hospitalDonorsEP = "/api/hospitals/donors";
+
+  /// /api/hospitals/blood-request/donor-stats/{donor_id} - get donor stats
+  static const String donorStatsEP = "/api/hospitals/blood-request/donor-stats";
+
+  /// /api/hospitals/blood-request/donor-history/{donor_id} - get donor donation history
+  static const String donorHistoryEP = "/api/hospitals/blood-request/donor-history";
+
+  /// /api/hospitals/donors/{donor_id} - update donor notes and eligibility
+  static const String updateDonorEP = "/api/hospitals/donors";
 
   // // OTP
   static const int otpLength = 4;

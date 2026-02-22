@@ -1,8 +1,12 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
+import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/presentation/providers/blood_request_provider.dart';
+import 'package:HealthBridge/presentation/providers/hospital_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class NewBloodRequestScreen extends StatefulWidget {
   const NewBloodRequestScreen({super.key});
@@ -14,7 +18,7 @@ class NewBloodRequestScreen extends StatefulWidget {
 class _NewBloodRequestScreenState extends State<NewBloodRequestScreen> {
   String? selectedBloodType;
   int unitsNeeded = 5;
-  String urgencyLevel = 'Instant';
+  String urgencyLevel = 'Standard';
   final TextEditingController _reasonController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
   DateTime? selectedDateTime;
@@ -26,6 +30,82 @@ class _NewBloodRequestScreenState extends State<NewBloodRequestScreen> {
     _reasonController.dispose();
     _notesController.dispose();
     super.dispose();
+  }
+
+  void _submitRequest() {
+    context.hideKeyboard();
+    _performSubmit();
+  }
+
+  Future<void> _performSubmit() async {
+    // Validate inputs
+    if (selectedBloodType == null) {
+      SnackBarUtils.showError(context, 'Please select a blood type');
+      return;
+    }
+
+    if (_reasonController.text.isEmpty) {
+      SnackBarUtils.showError(
+          context, 'Please provide a reason for the request');
+      return;
+    }
+
+    if (selectedDateTime == null) {
+      SnackBarUtils.showError(context, 'Please select a preferred time');
+      return;
+    }
+
+    // Convert blood type display format to API format
+    final bloodTypeMap = {
+      'A+': 'apositive',
+      'A-': 'anegative',
+      'B+': 'bpositive',
+      'B-': 'bnegative',
+      'AB+': 'abpositive',
+      'AB-': 'abnegative',
+      'O+': 'opositive',
+      'O-': 'onegative',
+    };
+
+    // Map urgency levels to API format
+    final urgencyMap = {
+      'Standard': 'standard',
+      'Urgent': 'urgent',
+    };
+
+    final hospitalProvider = context.read<HospitalProvider>();
+    final hospitalId = hospitalProvider.hospitalProfile?.id;
+
+    if (hospitalId == null) {
+      SnackBarUtils.showError(context, 'Hospital ID not found');
+      return;
+    }
+
+    final payload = {
+      'hospital_id': hospitalId,
+      'blood_type': bloodTypeMap[selectedBloodType],
+      'units': unitsNeeded,
+      'urgency': urgencyMap[urgencyLevel],
+      'request_reason': _reasonController.text,
+      'preferred_time': selectedDateTime!.toUtc().toIso8601String(),
+      'note': _notesController.text.isNotEmpty ? _notesController.text : null,
+    };
+
+    final provider = context.read<BloodRequestProvider>();
+    final error = await provider.createBloodRequest(payload);
+
+    if (mounted) {
+      if (error == null) {
+        SnackBarUtils.showSuccess(
+            context, 'Blood request created successfully');
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) {
+          context.goBack();
+        }
+      } else {
+        SnackBarUtils.showError(context, error);
+      }
+    }
   }
 
   @override
@@ -125,6 +205,7 @@ class _NewBloodRequestScreenState extends State<NewBloodRequestScreen> {
             const SizedBox(height: 12),
             GestureDetector(
               onTap: () async {
+                context.hideKeyboard();
                 final DateTime? date = await showDatePicker(
                   context: context,
                   initialDate: DateTime.now(),
@@ -183,6 +264,7 @@ class _NewBloodRequestScreenState extends State<NewBloodRequestScreen> {
             const SizedBox(height: 12),
             GestureDetector(
               onTap: () async {
+                context.hideKeyboard();
                 final TimeOfDay? time = await showTimePicker(
                   context: context,
                   initialTime: TimeOfDay.now(),
@@ -285,11 +367,14 @@ class _NewBloodRequestScreenState extends State<NewBloodRequestScreen> {
             SizedBox(
               width: double.infinity,
               height: 50,
-              child: CustomButton(
-                onPressed: () {
-                  SnackBarUtils.showSuccess(context, "Request submitted");
+              child: Consumer<BloodRequestProvider>(
+                builder: (context, provider, _) {
+                  return CustomButton(
+                    onPressed: provider.isLoading ? () {} : _submitRequest,
+                    text: 'Submit',
+                    showLoading: provider.isLoading,
+                  );
                 },
-                text: 'Submit',
               ),
             ),
             const SizedBox(height: 40),
@@ -393,27 +478,28 @@ class _NewBloodRequestScreenState extends State<NewBloodRequestScreen> {
           child: GestureDetector(
             onTap: () {
               setState(() {
-                urgencyLevel = 'Instant';
+                urgencyLevel = 'Standard';
               });
             },
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: BoxDecoration(
-                color: urgencyLevel == 'Instant' ? AppColors.red : Colors.white,
+                color:
+                    urgencyLevel == 'Standard' ? AppColors.red : Colors.white,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: urgencyLevel == 'Instant'
+                  color: urgencyLevel == 'Standard'
                       ? AppColors.red
                       : const Color(0xFFE5E7EB),
                 ),
               ),
               child: Text(
-                'Instant',
+                'Standard',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: urgencyLevel == 'Instant'
+                  color: urgencyLevel == 'Standard'
                       ? Colors.white
                       : const Color(0xFF374151),
                 ),

@@ -42,36 +42,39 @@ class BloodRequestModel {
   });
 
   factory BloodRequestModel.fromJson(Map<String, dynamic> json) {
+    // Extract blood_request object if it exists (wrapped response structure)
+    final bloodRequestData = json['blood_request'] as Map<String, dynamic>? ?? json;
+
     return BloodRequestModel(
-      id: json['id'] as String? ?? '',
-      hospitalId: json['hospital_id'] as String? ?? '',
-      donorId: json['donor_id'] as String? ?? '',
-      recipientId: json['recipient_id'] as String?,
-      bloodType: json['blood_type'] as String?,
-      units: json['units'] as int? ?? 0,
-      urgency: json['urgency'] as String?,
-      requestReason: json['request_reason'] as String?,
-      refId: json['ref_id'] as String? ?? '',
-      requestStatus: json['request_status'] as String?,
-      timelineStatus: json['timeline_status'] as String?,
-      preferredTime: json['preferred_time'] != null
-          ? DateTime.tryParse(json['preferred_time'] as String)
+      id: bloodRequestData['id'] as String? ?? '',
+      hospitalId: bloodRequestData['hospital_id'] as String? ?? '',
+      donorId: bloodRequestData['donor_id'] as String? ?? '',
+      recipientId: bloodRequestData['recipient_id'] as String?,
+      bloodType: bloodRequestData['blood_type'] as String?,
+      units: bloodRequestData['units'] as int? ?? 0,
+      urgency: bloodRequestData['urgency'] as String?,
+      requestReason: bloodRequestData['request_reason'] as String?,
+      refId: bloodRequestData['ref_id'] as String? ?? '',
+      requestStatus: bloodRequestData['request_status'] as String?,
+      timelineStatus: bloodRequestData['timeline_status'] as String?,
+      preferredTime: bloodRequestData['preferred_time'] != null
+          ? DateTime.tryParse(bloodRequestData['preferred_time'] as String)
           : null,
-      donatedAt: json['donated_at'] != null
-          ? DateTime.tryParse(json['donated_at'] as String)
+      donatedAt: bloodRequestData['donated_at'] != null
+          ? DateTime.tryParse(bloodRequestData['donated_at'] as String)
           : null,
-      administeredAt: json['administered_at'] != null
-          ? DateTime.tryParse(json['administered_at'] as String)
+      administeredAt: bloodRequestData['administered_at'] != null
+          ? DateTime.tryParse(bloodRequestData['administered_at'] as String)
           : null,
-      note: json['note'] as String?,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
+      note: bloodRequestData['note'] as String?,
+      createdAt: bloodRequestData['created_at'] != null
+          ? DateTime.tryParse(bloodRequestData['created_at'] as String) ?? DateTime.now()
           : DateTime.now(),
-      cancelledAt: json['cancelled_at'] != null
-          ? DateTime.tryParse(json['cancelled_at'] as String)
+      cancelledAt: bloodRequestData['cancelled_at'] != null
+          ? DateTime.tryParse(bloodRequestData['cancelled_at'] as String)
           : null,
-      cancelledBy: json['cancelled_by'] as String?,
-      cancelledReason: json['cancelled_reason'] as String?,
+      cancelledBy: bloodRequestData['cancelled_by'] as String?,
+      cancelledReason: bloodRequestData['cancelled_reason'] as String?,
     );
   }
 

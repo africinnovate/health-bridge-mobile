@@ -1,11 +1,14 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/constants/app_routes.dart';
+import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
 import 'package:HealthBridge/presentation/providers/hospital_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+
+import '../../../providers/auth_provider.dart';
 
 class HospitalProfileScreen extends StatefulWidget {
   const HospitalProfileScreen({super.key});
@@ -336,8 +339,8 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                       Icons.notifications,
                       'Notification',
                       Icons.chevron_right,
-                      () =>
-                          context.push(AppRoutes.notificationsHospital, extra: true),
+                      () => context.push(AppRoutes.notificationsHospital,
+                          extra: true),
                       // unused - notificationsSettings
                     ),
                     const Divider(height: 1),
@@ -365,7 +368,7 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                 width: double.infinity,
                 height: 50,
                 child: CustomButton(
-                  onPressed: () => SnackBarUtils.showInfo(context, "Logout"),
+                  onPressed: _showLogoutDialog,
                   text: 'Log Out',
                 ),
               ),
@@ -375,6 +378,74 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
         ),
       ),
     );
+  }
+
+  /// Show logout confirmation dialog
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Log Out',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        content: const Text(
+          'Are you sure you want to log out?',
+          style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF6B7280)),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              await _performLogout();
+            },
+            child: const Text(
+              'Log Out',
+              style:
+                  TextStyle(color: AppColors.red, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Perform logout - call API and clear storage
+  Future<void> _performLogout() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // Show loading
+    context.showLoadingDialog();
+
+    try {
+      // Call logout API (also clears SecureStorage)
+      final error = await authProvider.logout();
+
+      if (error != null) {
+        if (!mounted) return;
+        SnackBarUtils.showError(context, error);
+        authProvider.setIsLoadingToFalse();
+        return;
+      }
+
+      // Success - navigate to login screen
+      if (!mounted) return;
+
+      // Navigate to login and clear navigation stack
+      context.go(AppRoutes.login);
+    } catch (e) {
+      if (!mounted) return;
+      SnackBarUtils.showError(context, "An error occurred during logout");
+      context.hideLoadingDialog();
+    }
   }
 
   Widget _infoRow(IconData icon, String label, String value) {

@@ -181,7 +181,6 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
 
       // Success - navigate to login screen
       if (!mounted) return;
-      SnackBarUtils.showSuccess(context, "Logged out successfully");
 
       // Navigate to login and clear navigation stack
       context.go(AppRoutes.login);
