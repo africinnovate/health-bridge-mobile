@@ -114,34 +114,48 @@ lib/
 
 ## 📸 Screenshots
 
-### Donor Experience
-![Donor Home](screenshots/donor/home_tap.png)
-*Donor Home Dashboard - Personalized greeting with stats and upcoming appointments*
-
-![Nearby Hospitals](screenshots/donor/appointments.png)
-*Hospital Discovery - Find nearby hospitals accepting blood donations*
-
-![Donation History](screenshots/donor/donation_history.png)
-*Donation History - Track all past donations with impact metrics*
-
-![Appointment Details](screenshots/donor/appountment_tap.png)
-*Appointment Management - Schedule, reschedule, or cancel appointments*
-
-![Settings](screenshots/donor/Consultation_preference.png)
-*Consultation Preferences - Choose preferred consultation method*
-
-### Hospital Experience
-![Hospital Home](screenshots/hospital/home_tap.png)
-*Hospital Dashboard - Overview of blood inventory and donation requests*
-
-![Inventory Management](screenshots/hospital/inventory_tap.png)
-*Blood Inventory - Real-time tracking of available blood units*
-
-![Donation Requests](screenshots/hospital/requests_tap.png)
-*Request Management - Post and manage blood donation requests*
-
-![Donor List](screenshots/hospital/donor_list.png)
-*Donor Directory - Browse and manage donor database*
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 20px 0;">
+  <div>
+    <img src="screenshots/donor/home_tap.png" alt="Donor Home" style="width: 100%; border-radius: 8px;">
+    <p style="text-align: center; font-size: 12px; margin-top: 8px;"><strong>Donor Home</strong> - Dashboard with stats</p>
+  </div>
+  <div>
+    <img src="screenshots/donor/appointments.png" alt="Appointments" style="width: 100%; border-radius: 8px;">
+    <p style="text-align: center; font-size: 12px; margin-top: 8px;"><strong>Appointments</strong> - View & manage</p>
+  </div>
+  <div>
+    <img src="screenshots/donor/donation_history.png" alt="Donation History" style="width: 100%; border-radius: 8px;">
+    <p style="text-align: center; font-size: 12px; margin-top: 8px;"><strong>Donation History</strong> - Track donations</p>
+  </div>
+  <div>
+    <img src="screenshots/donor/appountment_tap.png" alt="Appointment Details" style="width: 100%; border-radius: 8px;">
+    <p style="text-align: center; font-size: 12px; margin-top: 8px;"><strong>Appointment Details</strong> - Full info</p>
+  </div>
+  <div>
+    <img src="screenshots/donor/Consultation_preference.png" alt="Consultation Preference" style="width: 100%; border-radius: 8px;">
+    <p style="text-align: center; font-size: 12px; margin-top: 8px;"><strong>Consultation Preference</strong> - Settings</p>
+  </div>
+  <div>
+    <img src="screenshots/hospital/home_tap.png" alt="Hospital Home" style="width: 100%; border-radius: 8px;">
+    <p style="text-align: center; font-size: 12px; margin-top: 8px;"><strong>Hospital Dashboard</strong> - Overview</p>
+  </div>
+  <div>
+    <img src="screenshots/hospital/inventory_tap.png" alt="Inventory" style="width: 100%; border-radius: 8px;">
+    <p style="text-align: center; font-size: 12px; margin-top: 8px;"><strong>Blood Inventory</strong> - Stock levels</p>
+  </div>
+  <div>
+    <img src="screenshots/hospital/requests_tap.png" alt="Requests" style="width: 100%; border-radius: 8px;">
+    <p style="text-align: center; font-size: 12px; margin-top: 8px;"><strong>Donation Requests</strong> - Management</p>
+  </div>
+  <div>
+    <img src="screenshots/hospital/donor_list.png" alt="Donor List" style="width: 100%; border-radius: 8px;">
+    <p style="text-align: center; font-size: 12px; margin-top: 8px;"><strong>Donor Directory</strong> - Browse donors</p>
+  </div>
+  <div>
+    <img src="screenshots/hospital/donation_history.png" alt="Hospital Donation History" style="width: 100%; border-radius: 8px;">
+    <p style="text-align: center; font-size: 12px; margin-top: 8px;"><strong>Donation History</strong> - Hospital view</p>
+  </div>
+</div>
 
 ## 🔧 Technical Implementation Details
 
