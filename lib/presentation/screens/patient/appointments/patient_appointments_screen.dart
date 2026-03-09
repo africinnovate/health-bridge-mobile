@@ -7,6 +7,8 @@ import 'package:HealthBridge/presentation/widgets/cancel_button.dart';
 import 'package:HealthBridge/presentation/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 
+/// this class and it's sub-classes are not used for now. We use donor appointments screen for both donor and patient until we have more specific requirements for each user type.
+/// This is to avoid code duplication and maintain a single source of truth for appointment management. We can easily customize the appointment card based on the user type in the future when needed.
 class PatientAppointmentsScreen extends StatefulWidget {
   const PatientAppointmentsScreen({super.key});
 

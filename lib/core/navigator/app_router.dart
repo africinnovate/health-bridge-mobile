@@ -57,9 +57,11 @@ import '../../presentation/screens/hospital/requests/request_details_screen.dart
 import '../../presentation/screens/patient/appointments/appointment_detail_screen.dart';
 import '../../presentation/screens/patient/appointments/appointment_rescheduled_screen.dart';
 import '../../presentation/screens/patient/appointments/pick_date_time_screen.dart';
+import '../../presentation/screens/patient/care/all_specialists_screen.dart';
 import '../../presentation/screens/patient/care/describe_symptoms_screen.dart';
 import '../../presentation/screens/patient/care/filters_screen.dart';
 import '../../presentation/screens/patient/care/specialist_details_screen.dart';
+import '../../data/models/specialist/specialist_profile_model.dart';
 import '../../presentation/screens/patient/notification/patient_notification_screen.dart';
 import '../../presentation/screens/patient/patient_root_screen.dart';
 import '../../presentation/screens/patient/profile/care_history_screen.dart';
@@ -70,6 +72,7 @@ import '../../presentation/screens/specialist/appointment/appointment_requests_s
 import '../../presentation/screens/specialist/profile/onboard/specialist_availability_screen.dart';
 import '../../presentation/screens/specialist/profile/onboard/specialist_set_profile_screen.dart';
 import '../../presentation/screens/specialist/reschedule_on_specialist_screen.dart';
+import '../../data/models/appointment/appointment_model.dart';
 import '../constants/app_routes.dart';
 
 class AppRouter {
@@ -142,8 +145,8 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.donorAppointmentDetail,
         builder: (context, state) {
-          final status = state.extra as String? ?? "upcoming";
-          return DonorAppointmentDetailScreen(status: status);
+          final appointment = state.extra as dynamic;
+          return DonorAppointmentDetailScreen(appointment: appointment);
         },
       ),
       GoRoute(
@@ -231,7 +234,13 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.patientAppointmentDetail,
         builder: (context, state) {
-          final status = state.extra as String? ?? "confirmed";
+          final extra = state.extra;
+          final String status;
+          if (extra is String) {
+            status = extra;
+          } else {
+            status = (extra as dynamic)?.status as String? ?? 'confirmed';
+          }
           return PatientAppointmentDetailScreen(status: status);
         },
       ),
@@ -245,7 +254,18 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.specialistDetails,
-        builder: (context, state) => SpecialistDetailsScreen(),
+        builder: (context, state) {
+          final specialist = state.extra as SpecialistProfileModel?;
+          return SpecialistDetailsScreen(specialist: specialist);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.allSpecialists,
+        builder: (context, state) {
+          final specialists =
+              (state.extra as List?)?.cast<SpecialistProfileModel>() ?? [];
+          return AllSpecialistsScreen(specialists: specialists);
+        },
       ),
       GoRoute(
         path: AppRoutes.describeSymptoms,
@@ -396,8 +416,8 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.specialistAppointDetailScreen,
         builder: (context, state) {
-          final comingFrom = state.extra as String?;
-          return specialist.AppointmentDetailScreen(comingFrom: comingFrom);
+          final appointment = state.extra as AppointmentModel?;
+          return specialist.AppointmentDetailScreen(appointment: appointment);
         },
       ),
       GoRoute(
@@ -409,7 +429,10 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.rescheduleOnSpecialist,
-        builder: (context, state) => RescheduleOnSpecialistScreen(),
+        builder: (context, state) {
+          final appointment = state.extra as AppointmentModel?;
+          return RescheduleOnSpecialistScreen(appointment: appointment);
+        },
       ),
       GoRoute(
         path: AppRoutes.appointmentTapOnSpecialist,

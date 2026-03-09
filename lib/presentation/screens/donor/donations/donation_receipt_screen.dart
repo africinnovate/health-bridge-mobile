@@ -1,11 +1,14 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
+import 'package:HealthBridge/data/models/donor/donation_history_model.dart';
 import 'package:HealthBridge/presentation/widgets/cancel_button.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 
 class DonationReceiptScreen extends StatelessWidget {
-  const DonationReceiptScreen({super.key});
+  final DonationHistoryModel? donation;
+
+  const DonationReceiptScreen({super.key, this.donation});
 
   @override
   Widget build(BuildContext context) {
@@ -69,17 +72,16 @@ class DonationReceiptScreen extends StatelessWidget {
                   /// Details
                   _detailRow('Donation Type:', 'Whole Blood'),
                   const SizedBox(height: 16),
-                  _detailRow('Date:', 'Sun, Nov 23, 2025'),
+                  _detailRow(
+                      'Date:', donation?.formattedDate ?? 'N/A'),
                   const SizedBox(height: 16),
-                  _detailRow('Time:', '9 AM'),
+                  _detailRow('Status:', donation?.requestStatus.replaceFirst(
+                          donation!.requestStatus[0],
+                          donation!.requestStatus[0].toUpperCase()) ?? 'N/A'),
                   const SizedBox(height: 16),
-                  _detailRow('Hospital:', 'St. Catherine Medical Center'),
+                  _detailRow('Reference ID:', donation?.refId ?? 'N/A'),
                   const SizedBox(height: 16),
-                  _detailRow('Units Donated:', '1 Unit (~450ml)'),
-                  const SizedBox(height: 16),
-                  _detailRow('Donor ID:', 'HB-DN-88402'),
-                  const SizedBox(height: 16),
-                  _detailRow('Reference ID:', 'HB-DB-39402'),
+                  _detailRow('Units Donated:', donation?.formattedUnits ?? 'N/A'),
                 ],
               ),
             ),

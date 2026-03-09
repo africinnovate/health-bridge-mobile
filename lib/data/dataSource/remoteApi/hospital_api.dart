@@ -9,6 +9,29 @@ class HospitalApi {
 
   HospitalApi({required this.apiClient});
 
+  /// Get all hospitals
+  Future<ResponseStatusM> getAllHospitals() async {
+    var header = await Injection.tokenHeaders();
+    final response = await apiClient.get(
+      AppConstants.allHospitalsEP,
+      headers: header,
+    );
+
+    return ResponseUtils.getApiResponse(response);
+  }
+
+  /// Get nearby hospitals
+  Future<ResponseStatusM> getNearbyHospitals() async {
+    var header = await Injection.tokenHeaders();
+    final response = await apiClient.get(
+      AppConstants.nearbyHospitalsEP,
+      headers: header,
+    );
+
+    return ResponseUtils.getApiResponse(response);
+  }
+
+  /// Get my hospital profile
   Future<ResponseStatusM> getHospitalProfile() async {
     var header = await Injection.tokenHeaders();
     final response = await apiClient.get(
@@ -227,6 +250,8 @@ class HospitalApi {
 
     return ResponseUtils.getApiResponse(response);
   }
+
+  /// add endpoint to get all hospital
 }
 
 /*  ============== original blood request response

@@ -9,6 +9,24 @@ class HospitalRepository {
     required this.hospitalApi,
   });
 
+  /// Get all hospitals
+  Future<ResponseStatusM> getAllHospitals() async {
+    try {
+      return await hospitalApi.getAllHospitals();
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
+
+  /// Get nearby hospitals
+  Future<ResponseStatusM> getNearbyHospitals() async {
+    try {
+      return await hospitalApi.getNearbyHospitals();
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
+
   Future<ResponseStatusM> getHospitalProfile() async {
     try {
       return await hospitalApi.getHospitalProfile();
@@ -87,7 +105,8 @@ class HospitalRepository {
   Future<ResponseStatusM> updateBloodInventory(
       String hospitalId, String bloodType, Map<String, dynamic> payload) async {
     try {
-      return await hospitalApi.updateBloodInventory(hospitalId, bloodType, payload);
+      return await hospitalApi.updateBloodInventory(
+          hospitalId, bloodType, payload);
     } catch (e) {
       return ResponseUtils.checkError(e);
     }

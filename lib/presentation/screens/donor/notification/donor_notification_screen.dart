@@ -28,8 +28,8 @@ class DonorNotificationScreen extends StatelessWidget {
             time: '10 mins ago',
             buttonText: 'View Appointment',
             onButtonPressed: () {
-              context.goNextScreenWithData(AppRoutes.donorAppointmentDetail,
-                  extra: "upcoming");
+              // context.goNextScreenWithData(AppRoutes.donorAppointmentDetail,
+              //     extra: "upcoming");
             },
           ),
           const SizedBox(height: 16),
@@ -42,8 +42,8 @@ class DonorNotificationScreen extends StatelessWidget {
             time: '10 mins ago',
             buttonText: 'View Appointment',
             onButtonPressed: () {
-              context.goNextScreenWithData(AppRoutes.donorAppointmentDetail,
-                  extra: "upcoming");
+              // context.goNextScreenWithData(AppRoutes.donorAppointmentDetail,
+              //     extra: "upcoming");
             },
           ),
           const SizedBox(height: 16),
@@ -56,7 +56,7 @@ class DonorNotificationScreen extends StatelessWidget {
             time: '10 mins ago',
             buttonText: 'Review New Time',
             onButtonPressed: () {
-              context.goNextScreen(AppRoutes.donorAppointmentRescheduled);
+              // context.goNextScreen(AppRoutes.donorAppointmentRescheduled);
             },
           ),
           const SizedBox(height: 16),
@@ -92,8 +92,8 @@ class DonorNotificationScreen extends StatelessWidget {
             time: '10 mins ago',
             buttonText: 'View Appointment',
             onButtonPressed: () {
-              context.goNextScreenWithData(AppRoutes.donorAppointmentDetail,
-                  extra: "upcoming");
+              // context.goNextScreenWithData(AppRoutes.donorAppointmentDetail,
+              //     extra: "upcoming");
             },
             badge: 'Blood Collection',
           ),

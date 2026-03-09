@@ -14,6 +14,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
+import '../donor/appointment/donor_appointments_screen.dart';
 import '../general/profile/general_profile_screen.dart';
 
 class PatientRootScreen extends StatefulWidget {
@@ -41,7 +42,9 @@ class _PatientRootScreenState extends State<PatientRootScreen> {
 
   List<Widget> get _screens => [
         PatientHomeScreen(onNavigateToTab: _navigateToTab),
-        PatientAppointmentsScreen(),
+        // PatientAppointmentsScreen(),
+        const DonorAppointmentsScreen(appointmentType: 'patient'),
+
         PatientCareScreen(onNavigateToTab: _navigateToTab),
         // PatientProfileScreen()
         GeneralProfileScreen(),
@@ -77,6 +80,8 @@ class _PatientRootScreenState extends State<PatientRootScreen> {
     // if firstname is empty, go to profile completion
     if (patientApi.patientProfileM?.bloodType == null) {
       context.goNextScreen(AppRoutes.setProfilePatient);
+    } else if (patientApi.patientProfileM!.firstName!.isEmpty) {
+      context.goNextScreen(AppRoutes.editProfileDonor);
     }
   }
 

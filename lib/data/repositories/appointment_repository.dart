@@ -8,10 +8,47 @@ class AppointmentRepository {
 
   AppointmentRepository({required this.appointmentApi});
 
-  Future<ResponseStatusM> fetchAppointments(
-      String appointmentType, String status) async {
+  Future<ResponseStatusM> fetchAppointments(String appointmentType,
+      {String? status, String? timeline}) async {
     try {
-      return await appointmentApi.getAppointments(appointmentType, status);
+      return await appointmentApi.getAppointments(appointmentType,
+          status: status, timeline: timeline);
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
+
+  Future<ResponseStatusM> rescheduleAppointment(
+    String appointmentId,
+    DateTime newScheduledTime,
+  ) async {
+    try {
+      return await appointmentApi.rescheduleAppointment(
+        appointmentId,
+        newScheduledTime,
+      );
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
+
+  Future<ResponseStatusM> confirmAppointment(String appointmentId) async {
+    try {
+      return await appointmentApi.confirmAppointment(appointmentId);
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
+
+  Future<ResponseStatusM> cancelAppointment(
+    String appointmentId,
+    String reason,
+  ) async {
+    try {
+      return await appointmentApi.cancelAppointment(
+        appointmentId,
+        reason,
+      );
     } catch (e) {
       return ResponseUtils.checkError(e);
     }

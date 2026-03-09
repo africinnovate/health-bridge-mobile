@@ -59,9 +59,16 @@ class _DonorRootScreenState extends State<DonorRootScreen> {
       return;
     }
 
-    // if firstname is empty, go to profile completion
+    // if bloodType is empty, go to 'set profile' completion
     if (patientApi.patientProfileM?.bloodType == null) {
       context.goNextScreen(AppRoutes.setProfilePatient);
+      return;
+    }
+
+    // if firstname is empty, go to profile completion
+    if (patientApi.patientProfileM!.firstName.isNullExt) {
+      context.goNextScreen(AppRoutes.editProfileDonor);
+      return;
     }
   }
 

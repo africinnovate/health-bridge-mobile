@@ -104,4 +104,42 @@ class AuthRepository {
       return ResponseUtils.checkError(e);
     }
   }
+
+  /// Get consultation preference for authenticated user
+  Future<ResponseStatusM> getConsultationPreference() async {
+    try {
+      return await authApi.getConsultationPreference();
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
+
+  /// Update consultation preference for authenticated user
+  Future<ResponseStatusM> updateConsultationPreference(
+      String preference) async {
+    try {
+      return await authApi.updateConsultationPreference(preference);
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
+
+  /// Get user notification settings
+  Future<ResponseStatusM> getUserSettings() async {
+    try {
+      return await authApi.getUserSettings();
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
+
+  /// Update user notification settings
+  Future<ResponseStatusM> updateUserSettings(
+      Map<String, dynamic> settings) async {
+    try {
+      return await authApi.updateUserSettings(settings);
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
 }

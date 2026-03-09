@@ -30,7 +30,7 @@ class _DonationAppointmentsScreenState
   Future<void> _fetchAppointments() async {
     final provider = context.read<AppointmentProvider>();
     final error =
-        await provider.getAppointments('donor', selectedTab);
+        await provider.getAppointments('donor', status: selectedTab);
     if (mounted && error != null) {
       SnackBarUtils.showError(context, error);
     }

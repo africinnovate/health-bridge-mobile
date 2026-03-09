@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+/// this screen is not used. make reference to General Profile screen
 class PatientProfileScreen extends StatefulWidget {
   const PatientProfileScreen({super.key});
 
@@ -308,7 +309,8 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                 subtitle: '',
                 onTap: () async {
                   // Refresh token in background to ensure valid token for password change
-                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                  final authProvider =
+                      Provider.of<AuthProvider>(context, listen: false);
                   authProvider.refreshAccessToken();
 
                   // Navigate immediately while token refresh happens in background

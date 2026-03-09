@@ -112,4 +112,56 @@ class AuthApi {
 
     return ResponseUtils.getApiResponse(response);
   }
+
+  /// Get consultation preference for authenticated user
+  Future<ResponseStatusM> getConsultationPreference() async {
+    var header = await Injection.tokenHeaders();
+
+    final response = await apiClient.get(
+      AppConstants.consultationPreferenceEP,
+      headers: header,
+    );
+
+    return ResponseUtils.getApiResponse(response);
+  }
+
+  /// Update consultation preference for authenticated user
+  Future<ResponseStatusM> updateConsultationPreference(
+      String preference) async {
+    var header = await Injection.tokenHeaders();
+
+    final response = await apiClient.put(
+      AppConstants.consultationPreferenceEP,
+      headers: header,
+      data: {'preference': preference},
+    );
+
+    return ResponseUtils.getApiResponse(response);
+  }
+
+  /// Get user notification settings
+  Future<ResponseStatusM> getUserSettings() async {
+    var header = await Injection.tokenHeaders();
+
+    final response = await apiClient.get(
+      AppConstants.userSettingsEP,
+      headers: header,
+    );
+
+    return ResponseUtils.getApiResponse(response);
+  }
+
+  /// Update user notification settings
+  Future<ResponseStatusM> updateUserSettings(
+      Map<String, dynamic> settings) async {
+    var header = await Injection.tokenHeaders();
+
+    final response = await apiClient.put(
+      AppConstants.userSettingsEP,
+      headers: header,
+      data: settings,
+    );
+
+    return ResponseUtils.getApiResponse(response);
+  }
 }

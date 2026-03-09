@@ -39,6 +39,7 @@ class SpecialistProfileModel implements JsonSerializable {
   final String? address;
   final String? city;
   final String? state;
+  final double? rate;
 
   SpecialistProfileModel({
     required this.id,
@@ -71,6 +72,7 @@ class SpecialistProfileModel implements JsonSerializable {
     this.address,
     this.city,
     this.state,
+    this.rate,
   });
 
   factory SpecialistProfileModel.fromJson(Map<String, dynamic> json) {
@@ -107,6 +109,7 @@ class SpecialistProfileModel implements JsonSerializable {
       address: json['address'],
       city: json['city'],
       state: json['state'],
+      rate: json['rate'],
     );
   }
 
@@ -143,6 +146,7 @@ class SpecialistProfileModel implements JsonSerializable {
       'address': address,
       'city': city,
       'state': state,
+      'rate': rate,
     };
   }
 

@@ -52,7 +52,7 @@ class _HospitalHomeScreenState extends State<HospitalHomeScreen> {
     // Fetch recent activity
     await hospitalProvider.getHospitalRecentActivity();
     // Still fetch appointments for period filtering
-    await appointmentProvider.getAppointments('hospital', 'confirmed');
+    await appointmentProvider.getAppointments('hospital', status: 'confirmed');
   }
 
   int _getFilteredAppointmentCount(List<AppointmentModel>? appointments) {

@@ -68,15 +68,20 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /* Details
-  specialist - godstimeetin@gmail.com,
   donor - ronokinno+01@gmail.com
   hospital - ronokinno+02@gmail.com
+  patient - ronokinno+03@gmail.com
+  specialist - ronokinno+04@gmail.com,
+
+
   ResponseStatusM {
    status_code: 201,
    message: User registered successfully,
    data: {token: , refresh_token: , user: {id: 7faae0ea-31f6-4263-b4e5-aa92d8899305, first_name: , last_name: , email: ronokinno@gmail.com, role: specialist}},
    time: 1768055828095 (2026-01-10 15:37:08.095)
  }
+
+ {id: ae07caac-c931-4e0c-8d39-49c22e826b42, first_name: Seleh, last_name: Nowy, email: ronokinno+01@gmail.com, phone: 09098774433, gender: male, dob: 1995-01-15, role: donor, email_verified: true, address: 55 Abak road, image_url: null, blood_type: B+, chronic_illnesses: , allergies: , medications: , existing_conditions: , primary_physician: null, hmo_number: , emergency_contact_name: John Prince, emergency_contact_phone: 09097834343, medical_notes: I am healthy}
    */
 
   /// Resend verification code to user's email
@@ -288,5 +293,66 @@ class AuthProvider extends ChangeNotifier {
   void setIsLoadingToFalse() {
     _isLoading = false;
     notifyListeners();
+  }
+
+  String? _consultationPreference;
+  String? get consultationPreference => _consultationPreference;
+
+  /// Get consultation preference for authenticated user
+  Future<String?> getConsultationPreference() async {
+    final res = await getResponse(authRepository.getConsultationPreference());
+
+    if (ResponseUtils.isSuccessful(res)) {
+      if (res.data == null) return 'Invalid server response';
+
+      _consultationPreference = res.data['preference'];
+      notifyListeners();
+
+      return null; // success
+    }
+    return res.message ?? 'Failed to fetch consultation preference';
+  }
+
+  /// Update consultation preference for authenticated user
+  /// Allowed values"video_call", "voice_call", "in_person"
+  Future<String?> updateConsultationPreference(String preference) async {
+    final res = await getResponse(
+        authRepository.updateConsultationPreference(preference));
+
+    if (ResponseUtils.isSuccessful(res)) {
+      _consultationPreference = preference;
+      notifyListeners();
+
+      return null; // success
+    }
+    return res.message ?? 'Failed to update consultation preference';
+  }
+
+  Map<String, dynamic>? _userSettings;
+  Map<String, dynamic>? get userSettings => _userSettings;
+
+  /// Get user notification settings
+  Future<String?> getUserSettings() async {
+    final res = await getResponse(authRepository.getUserSettings());
+
+    if (ResponseUtils.isSuccessful(res)) {
+      if (res.data == null) return 'Invalid server response';
+      _userSettings = Map<String, dynamic>.from(res.data);
+      notifyListeners();
+      return null;
+    }
+    return res.message ?? 'Failed to fetch notification settings';
+  }
+
+  /// Update user notification settings
+  Future<String?> updateUserSettings(Map<String, dynamic> settings) async {
+    final res = await getResponse(authRepository.updateUserSettings(settings));
+
+    if (ResponseUtils.isSuccessful(res)) {
+      _userSettings = {...?_userSettings, ...settings};
+      notifyListeners();
+      return null;
+    }
+    return res.message ?? 'Failed to update notification settings';
   }
 }

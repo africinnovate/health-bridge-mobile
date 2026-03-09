@@ -1,12 +1,17 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/constants/app_routes.dart';
+import 'package:HealthBridge/data/models/specialist/specialist_profile_model.dart';
+import 'package:HealthBridge/presentation/providers/specialist_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class SpecialistDetailsScreen extends StatefulWidget {
-  const SpecialistDetailsScreen({super.key});
+  final SpecialistProfileModel? specialist;
+
+  const SpecialistDetailsScreen({super.key, this.specialist});
 
   @override
   State<SpecialistDetailsScreen> createState() =>
@@ -16,14 +21,46 @@ class SpecialistDetailsScreen extends StatefulWidget {
 class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
   String selectedTab = 'About';
 
+  String _getSpecialtyName() {
+    if (widget.specialist == null) return 'Specialist';
+    final provider = context.read<SpecialistProvider>();
+    try {
+      return provider.specialties
+          .firstWhere((s) => s.id == widget.specialist!.specialtyId)
+          .name;
+    } catch (_) {
+      return 'Specialist';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (widget.specialist == null) {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundGray,
+        appBar: const CustomAppBar(title: 'Specialist Details'),
+        body: const Center(child: Text('No specialist details available')),
+      );
+    }
+
+    final specialist = widget.specialist!;
+    final specialtyName = _getSpecialtyName();
+    final fullName = 'Dr. ${specialist.firstName} ${specialist.lastName}';
+    final experience = specialist.yearsOfExperience != null
+        ? '${specialist.yearsOfExperience} yrs'
+        : 'N/A';
+    final session = specialist.sessionDurationMinutes != null
+        ? '${specialist.sessionDurationMinutes} min'
+        : 'N/A';
+    final rateDisplay =
+        specialist.rate != null ? specialist.rate!.toStringAsFixed(1) : 'N/A';
+
     return Scaffold(
       backgroundColor: AppColors.backgroundGray,
       appBar: const CustomAppBar(title: 'Specialist Details'),
       body: Column(
         children: [
-          /// Specialist Header
+          /// Header
           Container(
             color: Colors.white,
             padding: const EdgeInsets.all(20),
@@ -33,48 +70,60 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundImage: AssetImage('assets/images/patient.png'),
+                      backgroundImage: specialist.imageUrl != null
+                          ? NetworkImage(specialist.imageUrl!) as ImageProvider
+                          : const AssetImage('assets/images/patient.png'),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Dr. Chinedu Okeke',
-                            style: TextStyle(
+                          Text(
+                            fullName,
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
-                            'Cardiologist',
-                            style: TextStyle(
+                          Text(
+                            specialtyName,
+                            style: const TextStyle(
                               fontSize: 14,
                               color: Color(0xFF6B7280),
                             ),
                           ),
                           const SizedBox(height: 8),
                           Row(
-                            children: const [
-                              Icon(Icons.star,
+                            children: [
+                              const Icon(Icons.star,
                                   color: Color(0xFFFBBF24), size: 16),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
-                                '4.5',
-                                style: TextStyle(
+                                rateDisplay,
+                                style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              Text(
-                                ' (127 reviews)',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF9CA3AF),
+                              if (specialist.city != null) ...[
+                                const SizedBox(width: 8),
+                                const Text('•',
+                                    style:
+                                        TextStyle(color: Color(0xFF9CA3AF))),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    specialist.city!,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF9CA3AF),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ],
@@ -87,25 +136,13 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
                 /// Stats Row
                 Row(
                   children: [
-                    Expanded(
-                      child: _statItem('Patients', '1,200+'),
-                    ),
+                    Expanded(child: _statItem('Experience', experience)),
                     Container(
-                      width: 1,
-                      height: 40,
-                      color: const Color(0xFFE5E7EB),
-                    ),
-                    Expanded(
-                      child: _statItem('Experience', '15 years'),
-                    ),
+                        width: 1, height: 40, color: const Color(0xFFE5E7EB)),
+                    Expanded(child: _statItem('Session', session)),
                     Container(
-                      width: 1,
-                      height: 40,
-                      color: const Color(0xFFE5E7EB),
-                    ),
-                    Expanded(
-                      child: _statItem('Rating', '4.5'),
-                    ),
+                        width: 1, height: 40, color: const Color(0xFFE5E7EB)),
+                    Expanded(child: _statItem('Rating', rateDisplay)),
                   ],
                 ),
               ],
@@ -115,7 +152,8 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
           /// Tab Toggle
           Container(
             color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
               children: [
                 Expanded(child: _tabButton('About')),
@@ -129,7 +167,9 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
-              child: selectedTab == 'About' ? _buildAboutTab() : _buildReviewsTab(),
+              child: selectedTab == 'About'
+                  ? _buildAboutTab(specialist, specialtyName)
+                  : _buildReviewsTab(specialist),
             ),
           ),
 
@@ -165,18 +205,13 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
       children: [
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF9CA3AF),
-          ),
+          style:
+              const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
         ),
       ],
     );
@@ -185,11 +220,7 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
   Widget _tabButton(String title) {
     final isSelected = selectedTab == title;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedTab = title;
-        });
-      },
+      onTap: () => setState(() => selectedTab = title),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
@@ -212,93 +243,134 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
     );
   }
 
-  Widget _buildAboutTab() {
+  Widget _buildAboutTab(
+      SpecialistProfileModel specialist, String specialtyName) {
+    final consultationTypes = _parseConsultationTypes(specialist.consultationType);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'About',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+        /// Bio
+        if (specialist.bio != null && specialist.bio!.isNotEmpty) ...[
+          const Text(
+            'About',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          'Dr. Chinedu Okeke is a highly experienced cardiologist with over 15 years of practice. He specializes in heart disease prevention, diagnosis, and treatment. Dr. Okeke is known for his patient-centered approach and has helped thousands of patients manage their cardiovascular health.',
-          style: TextStyle(
-            fontSize: 13,
-            color: Color(0xFF6B7280),
-            height: 1.5,
+          const SizedBox(height: 12),
+          Text(
+            specialist.bio!,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF6B7280),
+              height: 1.5,
+            ),
           ),
-        ),
-        const SizedBox(height: 24),
+          const SizedBox(height: 24),
+        ],
+
+        /// Specialization chip
         const Text(
-          'Specializations',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          'Specialization',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: [
-            _specializationChip('Heart Disease'),
-            _specializationChip('Hypertension'),
-            _specializationChip('Arrhythmia'),
-            _specializationChip('Heart Failure'),
+            _specializationChip(specialtyName),
           ],
         ),
         const SizedBox(height: 24),
+
+        /// Languages
+        if (specialist.languagesSpoken != null &&
+            specialist.languagesSpoken!.isNotEmpty) ...[
+          const Text(
+            'Languages',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: specialist.languagesSpoken!
+                .split(',')
+                .map((l) => _specializationChip(l.trim()))
+                .toList(),
+          ),
+          const SizedBox(height: 24),
+        ],
+
+        /// Consultation Types
         const Text(
           'Consultation Types',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 12),
-        _consultationTypeItem(Icons.videocam, 'Video Call', 'Available'),
-        const SizedBox(height: 12),
-        _consultationTypeItem(Icons.call, 'Voice Call', 'Available'),
-        const SizedBox(height: 12),
-        _consultationTypeItem(Icons.location_on, 'In Person', 'Available'),
+        ...consultationTypes.map((type) {
+          final icon = type == 'video_call'
+              ? Icons.videocam
+              : type == 'audio_call'
+                  ? Icons.call
+                  : Icons.location_on;
+          final label = type == 'video_call'
+              ? 'Video Call'
+              : type == 'audio_call'
+                  ? 'Voice Call'
+                  : 'In Person';
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _consultationTypeItem(icon, label, 'Available'),
+          );
+        }),
         const SizedBox(height: 24),
-        const Text(
-          'Working Hours',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+
+        /// Working Hours
+        if (specialist.availability.isNotEmpty) ...[
+          const Text(
+            'Working Hours',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: specialist.availability
+                  .asMap()
+                  .entries
+                  .map((entry) {
+                final index = entry.key;
+                final avail = entry.value;
+                return Column(
+                  children: [
+                    if (index != 0) const Divider(height: 16),
+                    _workingHourRow(
+                      avail.dayOfWeek,
+                      '${avail.opensAt} - ${avail.closesAt}',
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
           ),
-          child: Column(
-            children: [
-              _workingHourRow('Monday - Friday', '9:00 AM - 6:00 PM'),
-              const Divider(height: 16),
-              _workingHourRow('Saturday', '9:00 AM - 2:00 PM'),
-              const Divider(height: 16),
-              _workingHourRow('Sunday', 'Closed'),
-            ],
-          ),
-        ),
+        ],
       ],
     );
   }
 
-  Widget _buildReviewsTab() {
+  Widget _buildReviewsTab(SpecialistProfileModel specialist) {
+    final rateDisplay = specialist.rate != null
+        ? specialist.rate!.toStringAsFixed(1)
+        : 'N/A';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        /// Rating Summary
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -308,89 +380,51 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
           child: Row(
             children: [
               Column(
-                children: const [
+                children: [
                   Text(
-                    '4.5',
-                    style: TextStyle(
+                    rateDisplay,
+                    style: const TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Row(
+                  const SizedBox(height: 8),
+                  const Row(
                     children: [
                       Icon(Icons.star, color: Color(0xFFFBBF24), size: 20),
                       Icon(Icons.star, color: Color(0xFFFBBF24), size: 20),
                       Icon(Icons.star, color: Color(0xFFFBBF24), size: 20),
                       Icon(Icons.star, color: Color(0xFFFBBF24), size: 20),
-                      Icon(Icons.star_half, color: Color(0xFFFBBF24), size: 20),
+                      Icon(Icons.star_half,
+                          color: Color(0xFFFBBF24), size: 20),
                     ],
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    '127 reviews',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF9CA3AF),
-                    ),
                   ),
                 ],
               ),
               const SizedBox(width: 32),
-              Expanded(
-                child: Column(
-                  children: [
-                    _ratingBar(5, 85),
-                    const SizedBox(height: 6),
-                    _ratingBar(4, 10),
-                    const SizedBox(height: 6),
-                    _ratingBar(3, 3),
-                    const SizedBox(height: 6),
-                    _ratingBar(2, 1),
-                    const SizedBox(height: 6),
-                    _ratingBar(1, 1),
-                  ],
+              const Expanded(
+                child: Center(
+                  child: Text(
+                    'Reviews coming soon',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF9CA3AF),
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
-
-        /// Reviews List
-        const Text(
-          'Patient Reviews',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 16),
-        _reviewCard(
-          name: 'Chisom Adebayo',
-          rating: 5,
-          date: '2 days ago',
-          review:
-              'Dr. Okeke is an excellent cardiologist. He took the time to explain my condition and answered all my questions. Highly recommended!',
-        ),
-        const SizedBox(height: 12),
-        _reviewCard(
-          name: 'Emeka Johnson',
-          rating: 4,
-          date: '1 week ago',
-          review:
-              'Very professional and knowledgeable. The consultation was thorough and helpful.',
-        ),
-        const SizedBox(height: 12),
-        _reviewCard(
-          name: 'Ngozi Okafor',
-          rating: 5,
-          date: '2 weeks ago',
-          review:
-              'Best cardiologist I have ever visited. He really cares about his patients and provides excellent care.',
-        ),
       ],
     );
+  }
+
+  List<String> _parseConsultationTypes(String consultationType) {
+    if (consultationType.toLowerCase() == 'all') {
+      return ['video_call', 'audio_call', 'in_person'];
+    }
+    return consultationType.split(',').map((e) => e.trim()).toList();
   }
 
   Widget _specializationChip(String text) {
@@ -432,14 +466,13 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
           Expanded(
             child: Text(
               type,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+              style:
+                  const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: AppColors.green.withOpacity(0.1),
               borderRadius: BorderRadius.circular(6),
@@ -464,125 +497,14 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
       children: [
         Text(
           day,
-          style: const TextStyle(
-            fontSize: 13,
-            color: Color(0xFF6B7280),
-          ),
+          style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
         ),
         Text(
           hours,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-          ),
+          style:
+              const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         ),
       ],
-    );
-  }
-
-  Widget _ratingBar(int stars, int percentage) {
-    return Row(
-      children: [
-        Text(
-          '$stars',
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFF6B7280),
-          ),
-        ),
-        const SizedBox(width: 8),
-        const Icon(Icons.star, color: Color(0xFFFBBF24), size: 14),
-        const SizedBox(width: 8),
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: percentage / 100,
-              backgroundColor: const Color(0xFFE5E7EB),
-              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFBBF24)),
-              minHeight: 6,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          '$percentage%',
-          style: const TextStyle(
-            fontSize: 11,
-            color: Color(0xFF9CA3AF),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _reviewCard({
-    required String name,
-    required int rating,
-    required String date,
-    required String review,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundImage: AssetImage('assets/images/patient.png'),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      date,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: Color(0xFF9CA3AF),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Row(
-                children: List.generate(
-                  5,
-                  (index) => Icon(
-                    index < rating ? Icons.star : Icons.star_border,
-                    color: const Color(0xFFFBBF24),
-                    size: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            review,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF6B7280),
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

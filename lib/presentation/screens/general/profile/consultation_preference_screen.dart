@@ -1,9 +1,12 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/presentation/providers/auth_provider.dart';
 import 'package:HealthBridge/presentation/widgets/cancel_button.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ConsultationPreferenceScreen extends StatefulWidget {
   const ConsultationPreferenceScreen({super.key});
@@ -15,7 +18,28 @@ class ConsultationPreferenceScreen extends StatefulWidget {
 
 class _ConsultationPreferenceScreenState
     extends State<ConsultationPreferenceScreen> {
-  String selectedPreference = 'video';
+  String selectedPreference = '';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadConsultationPreference();
+    });
+  }
+
+  Future<void> _loadConsultationPreference() async {
+    context.showLoadingDialog();
+    final authProvider = context.read<AuthProvider>();
+    await authProvider.getConsultationPreference();
+    context.hideLoadingDialog();
+
+    if (mounted && authProvider.consultationPreference != null) {
+      setState(() {
+        selectedPreference = authProvider.consultationPreference!;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,28 +86,28 @@ class _ConsultationPreferenceScreenState
 
             /// Video Call Option
             _consultationOption(
-              value: 'video',
+              value: 'video_call',
               icon: Icons.videocam,
               iconColor: AppColors.green,
               title: 'Video Call',
-              description: 'See your doctor face-to-face with video consultations',
+              description:
+                  'See your doctor face-to-face with video consultations',
             ),
             const SizedBox(height: 16),
 
             /// Voice Call Option
             _consultationOption(
-              value: 'voice',
+              value: 'voice_call',
               icon: Icons.phone,
               iconColor: const Color(0xFF6B7280),
               title: 'Voice Call',
-              description:
-                  'Connect with your doctor through audio-only calls',
+              description: 'Connect with your doctor through audio-only calls',
             ),
             const SizedBox(height: 16),
 
             /// In-Person Option
             _consultationOption(
-              value: 'in-person',
+              value: 'in_person',
               icon: Icons.person_pin_circle,
               iconColor: const Color(0xFF6B7280),
               title: 'In-Person',
@@ -94,9 +118,8 @@ class _ConsultationPreferenceScreenState
 
             /// Save Button
             CustomButton(
-              onPressed: () {
-                // Handle save preference
-                context.goBack();
+              onPressed: () async {
+                await _saveConsultationPreference();
               },
               text: 'Save Preference',
             ),
@@ -116,6 +139,29 @@ class _ConsultationPreferenceScreenState
     );
   }
 
+  Future<void> _saveConsultationPreference() async {
+    context.showLoadingDialog();
+    final authProvider = context.read<AuthProvider>();
+
+    /// Allowed values"video_call", "voice_call", "in_person"
+    final error =
+        await authProvider.updateConsultationPreference(selectedPreference);
+
+    context.hideLoadingDialog();
+
+    if (error != null) {
+      if (mounted) {
+        SnackBarUtils.showError(context, error);
+      }
+      return;
+    }
+
+    if (mounted) {
+      SnackBarUtils.showSuccess(context, 'Preference saved successfully');
+      context.goBack();
+    }
+  }
+
   Widget _consultationOption({
     required String value,
     required IconData icon,
@@ -133,9 +179,7 @@ class _ConsultationPreferenceScreenState
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.green.withOpacity(0.05)
-              : Colors.white,
+          color: isSelected ? AppColors.green.withOpacity(0.05) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.green : const Color(0xFFE5E7EB),

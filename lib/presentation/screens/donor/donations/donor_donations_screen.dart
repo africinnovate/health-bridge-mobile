@@ -3,9 +3,14 @@ import 'package:HealthBridge/core/constants/app_routes.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/dialog.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/data/models/donor/donation_history_model.dart';
+import 'package:HealthBridge/presentation/providers/auth_provider.dart';
+import 'package:HealthBridge/presentation/providers/hospital_provider.dart';
+import 'package:HealthBridge/presentation/providers/patient_provider.dart';
 import 'package:HealthBridge/presentation/widgets/cancel_button.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class DonorDonationsScreen extends StatefulWidget {
   const DonorDonationsScreen({super.key});
@@ -15,6 +20,26 @@ class DonorDonationsScreen extends StatefulWidget {
 }
 
 class _DonorDonationsScreenState extends State<DonorDonationsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDonationData();
+    });
+  }
+
+  Future<void> _loadDonationData() async {
+    final donorProvider = context.read<PatientProvider>();
+    await donorProvider.getPatientOrDonorProfile();
+    String? donorId = donorProvider.patientProfileM?.id;
+    final hospitalProvider = context.read<HospitalProvider>();
+
+    // debugPrint("Loading donation data for donor ID: $donorId");
+    if (donorId == null) return;
+
+    await hospitalProvider.getDonorHistory(donorId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -72,11 +97,56 @@ class _DonorDonationsScreenState extends State<DonorDonationsScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildDonationHistoryCard(),
-              const SizedBox(height: 16),
-              _buildDonationHistoryCard(),
-              const SizedBox(height: 16),
-              _buildDonationHistoryCard(),
+              Consumer<HospitalProvider>(
+                builder: (context, hospitalProvider, _) {
+                  if (hospitalProvider.isDonorDataLoading) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  }
+
+                  if (hospitalProvider.donorHistory.isEmpty) {
+                    return Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'No donation history yet. Start your donation journey!',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return Column(
+                    children: [
+                      ...hospitalProvider.donorHistory
+                          .asMap()
+                          .entries
+                          .map((entry) {
+                        final index = entry.key;
+                        final donation = entry.value;
+                        return Column(
+                          children: [
+                            _buildDonationHistoryCard(donation),
+                            if (index <
+                                hospitalProvider.donorHistory.length - 1)
+                              const SizedBox(height: 16),
+                          ],
+                        );
+                      }).toList(),
+                    ],
+                  );
+                },
+              ),
               const SizedBox(height: 40),
             ],
           ),
@@ -241,10 +311,17 @@ class _DonorDonationsScreenState extends State<DonorDonationsScreen> {
     );
   }
 
-  Widget _buildDonationHistoryCard() {
+  Widget _buildDonationHistoryCard(DonationHistoryModel donation) {
+    final statusColor = donation.statusColor == 'green'
+        ? AppColors.green
+        : donation.statusColor == 'red'
+            ? Colors.red
+            : Colors.orange;
+
     return GestureDetector(
       onTap: () {
-        context.goNextScreen(AppRoutes.donationDetails);
+        context.goNextScreenWithData(AppRoutes.donationDetails,
+            extra: donation);
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -268,33 +345,35 @@ class _DonorDonationsScreenState extends State<DonorDonationsScreen> {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFEE2E2),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.water_drop,
-                    color: Colors.red,
+                    color: statusColor,
                     size: 20,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text(
+                  children: [
+                    const Text(
                       'Blood Donation',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'Completed',
+                      donation.requestStatus.replaceFirst(
+                          donation.requestStatus[0],
+                          donation.requestStatus[0].toUpperCase()),
                       style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.green,
+                        color: statusColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -311,9 +390,10 @@ class _DonorDonationsScreenState extends State<DonorDonationsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _historyInfoItem('Date', 'March 8, 2025'),
+                      _historyInfoItem('Date', donation.formattedDate),
                       const SizedBox(height: 12),
-                      _historyInfoItem('Blood Type', 'O+'),
+                      _historyInfoItem(
+                          'Units Donated', donation.formattedUnits),
                     ],
                   ),
                 ),
@@ -321,9 +401,12 @@ class _DonorDonationsScreenState extends State<DonorDonationsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _historyInfoItem('Location', 'City Hospital'),
+                      _historyInfoItem('Reference', donation.refId),
                       const SizedBox(height: 12),
-                      _historyInfoItem('Units Donated', '450ml'),
+                      _historyInfoItem(
+                          'Status',
+                          donation.requestStatus[0].toUpperCase() +
+                              donation.requestStatus.substring(1)),
                     ],
                   ),
                 ),
@@ -331,32 +414,33 @@ class _DonorDonationsScreenState extends State<DonorDonationsScreen> {
             ),
             const SizedBox(height: 16),
 
-            /// Impact Banner
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFDCFCE7),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: const [
-                  Icon(
-                    Icons.favorite,
-                    color: AppColors.green,
-                    size: 16,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Your donation can save up to 3 lives',
-                    style: TextStyle(
-                      fontSize: 12,
+            /// Impact Banner (only show for completed donations)
+            if (donation.isCompleted)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(
+                      Icons.favorite,
                       color: AppColors.green,
-                      fontWeight: FontWeight.w600,
+                      size: 16,
                     ),
-                  ),
-                ],
+                    SizedBox(width: 8),
+                    Text(
+                      'Your donation can save up to 3 lives',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.green,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       ),

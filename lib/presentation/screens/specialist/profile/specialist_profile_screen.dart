@@ -21,6 +21,9 @@ class SpecialistProfileScreen extends StatelessWidget {
     return Consumer<SpecialistProvider>(
       builder: (context, specialistProvider, child) {
         final profile = specialistProvider.specialistProfileM;
+        if (profile == null) {
+          specialistProvider.getSpecialistProfile();
+        }
 
         return Scaffold(
           backgroundColor: const Color(0xFFF9FAFB),

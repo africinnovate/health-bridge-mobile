@@ -53,6 +53,7 @@ class AppRoutes {
       '/patient-appointment-rescheduled';
   static const String patientNotification = '/patient-notification';
   static const String specialistDetails = '/specialist-details';
+  static const String allSpecialists = '/all-specialists';
   static const String describeSymptoms = '/describe-symptoms';
   static const String filters = '/filters';
   static const String filterResults = '/filter-results';

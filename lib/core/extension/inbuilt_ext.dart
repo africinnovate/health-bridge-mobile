@@ -107,3 +107,14 @@ Future<bool> checkNetwork() async {
     return false;
   }
 }
+
+extension NullCheckExtension on Object? {
+  bool get isNullExt {
+    if (this == null) return true;
+    if (this is String) {
+      String str = this as String;
+      return str.isEmpty || str == "null";
+    }
+    return false;
+  }
+}

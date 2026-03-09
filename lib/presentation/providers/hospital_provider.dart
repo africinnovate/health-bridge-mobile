@@ -100,8 +100,45 @@ class HospitalProvider extends ChangeNotifier {
   HospitalDashboardStatsModel? dashboardStats;
   List<HospitalActivityModel> recentActivities = [];
   List<DonorModel> donors = [];
+  List<HospitalModel> allHospitals = [];
+  List<HospitalModel> nearbyHospitals = [];
   DonorStatsModel? donorStats;
   List<DonationHistoryModel> donorHistory = [];
+
+  /// Get all hospitals
+  Future<String?> getAllHospitals() async {
+    final res = await getResponse(hospitalRepository.getAllHospitals());
+
+    if (ResponseUtils.isSuccessful(res)) {
+      if (res.data == null) return 'Invalid server response';
+
+      allHospitals = (res.data as List)
+          .map((item) => HospitalModel.fromJson(item))
+          .toList();
+      notifyListeners();
+
+      return null; // success
+    }
+    return res.message ?? 'Failed to fetch hospitals';
+  }
+
+  /// Get nearby hospitals (for donors to find nearby hospitals)
+  Future<String?> getNearbyHospitals() async {
+    final res = await getResponse(hospitalRepository.getNearbyHospitals(),
+        shouldLoad: false);
+
+    if (ResponseUtils.isSuccessful(res)) {
+      if (res.data == null) return 'Invalid server response';
+
+      nearbyHospitals = (res.data as List)
+          .map((item) => HospitalModel.fromJson(item))
+          .toList();
+      notifyListeners();
+
+      return null; // success
+    }
+    return res.message ?? 'Failed to fetch hospitals';
+  }
 
   /// Get donor list
   Future<String?> getDonorList({
@@ -118,9 +155,8 @@ class HospitalProvider extends ChangeNotifier {
     if (ResponseUtils.isSuccessful(res)) {
       if (res.data == null) return 'Invalid server response';
 
-      donors = (res.data as List)
-          .map((item) => DonorModel.fromJson(item))
-          .toList();
+      donors =
+          (res.data as List).map((item) => DonorModel.fromJson(item)).toList();
       notifyListeners();
 
       return null; // success
@@ -165,8 +201,8 @@ class HospitalProvider extends ChangeNotifier {
   /// Update donor notes and eligibility
   Future<String?> updateDonor(
       String donorId, Map<String, dynamic> payload) async {
-    final res = await getResponse(
-        hospitalRepository.updateDonor(donorId, payload));
+    final res =
+        await getResponse(hospitalRepository.updateDonor(donorId, payload));
 
     if (ResponseUtils.isSuccessful(res)) {
       // Update successful - could refresh donor data here if needed
@@ -352,15 +388,15 @@ class HospitalProvider extends ChangeNotifier {
   }
 
   /// Update blood inventory units
-  Future<String?> updateBloodInventory(
-      String hospitalId, String bloodType, int bankCapacity, int newUnits) async {
+  Future<String?> updateBloodInventory(String hospitalId, String bloodType,
+      int bankCapacity, int newUnits) async {
     final payload = {
       'bank_capacity': bankCapacity,
       'units_available': newUnits,
     };
 
-    final res = await getResponse(
-        hospitalRepository.updateBloodInventory(hospitalId, bloodType, payload));
+    final res = await getResponse(hospitalRepository.updateBloodInventory(
+        hospitalId, bloodType, payload));
 
     if (ResponseUtils.isSuccessful(res)) {
       // Refresh hospital profile to get updated inventory
