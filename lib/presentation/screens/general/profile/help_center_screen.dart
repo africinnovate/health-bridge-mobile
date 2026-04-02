@@ -4,8 +4,48 @@ import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 
-class HelpCenterScreen extends StatelessWidget {
+class HelpCenterScreen extends StatefulWidget {
   const HelpCenterScreen({super.key});
+
+  @override
+  State<HelpCenterScreen> createState() => _HelpCenterScreenState();
+}
+
+class _HelpCenterScreenState extends State<HelpCenterScreen> {
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  static const List<Map<String, String>> _articles = [
+    {
+      'title': 'How do I book an appointment with a specialist?',
+      'views': '1.2k views',
+      'readTime': '3 min read',
+    },
+    {
+      'title': 'What should I do if I miss an appointment?',
+      'views': '1.2k views',
+      'readTime': '2 min read',
+    },
+    {
+      'title': 'How do I prepare for a blood donation?',
+      'views': '943 views',
+      'readTime': '4 min read',
+    },
+  ];
+
+  List<Map<String, String>> get _filteredArticles {
+    if (_searchQuery.isEmpty) return _articles;
+    final query = _searchQuery.toLowerCase();
+    return _articles
+        .where((a) => a['title']!.toLowerCase().contains(query))
+        .toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,16 +68,28 @@ class HelpCenterScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFE5E7EB)),
               ),
-              child: const TextField(
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) => setState(() => _searchQuery = value),
                 decoration: InputDecoration(
-                  icon: Icon(Icons.search, color: Color(0xFF9CA3AF)),
+                  icon: const Icon(Icons.search, color: Color(0xFF9CA3AF)),
                   hintText: 'Search for help...',
-                  hintStyle: TextStyle(
+                  hintStyle: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF9CA3AF),
                   ),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? GestureDetector(
+                          onTap: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                          child: const Icon(Icons.close,
+                              color: Color(0xFF9CA3AF), size: 20),
+                        )
+                      : null,
                 ),
               ),
             ),
@@ -53,36 +105,44 @@ class HelpCenterScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
+            if (_filteredArticles.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Text(
+                  'No articles found matching your search.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                ),
+              )
+            else
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Column(
+                  children: _filteredArticles.asMap().entries.map((entry) {
+                    final article = entry.value;
+                    final isLast = entry.key == _filteredArticles.length - 1;
+                    return Column(
+                      children: [
+                        _articleItem(
+                          title: article['title']!,
+                          views: article['views']!,
+                          readTime: article['readTime']!,
+                          onTap: () {},
+                        ),
+                        if (!isLast) const Divider(height: 1, indent: 16),
+                      ],
+                    );
+                  }).toList(),
+                ),
               ),
-              child: Column(
-                children: [
-                  _articleItem(
-                    title: 'How do I book an appointment with a specialist?',
-                    views: '1.2k views',
-                    readTime: '1.2k views',
-                    onTap: () {},
-                  ),
-                  const Divider(height: 1, indent: 16),
-                  _articleItem(
-                    title: 'What should I do if I miss an appointment?',
-                    views: '1.2k views',
-                    readTime: '1.2k views',
-                    onTap: () {},
-                  ),
-                  const Divider(height: 1, indent: 16),
-                  _articleItem(
-                    title: 'How do I prepare for a blood donation?',
-                    views: '943 views',
-                    readTime: '4 min read',
-                    onTap: () {},
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 32),
 
             /// Browse by Category

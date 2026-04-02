@@ -1,8 +1,7 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
-import 'package:HealthBridge/core/constants/app_routes.dart';
-import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class FaqsScreen extends StatefulWidget {
   const FaqsScreen({super.key});
@@ -12,9 +11,11 @@ class FaqsScreen extends StatefulWidget {
 }
 
 class _FaqsScreenState extends State<FaqsScreen> {
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
   int? expandedIndex;
 
-  final List<Map<String, String>> faqs = [
+  static const List<Map<String, String>> _allFaqs = [
     {
       'question': 'How do I book an appointment?',
       'answer':
@@ -42,6 +43,22 @@ class _FaqsScreenState extends State<FaqsScreen> {
     },
   ];
 
+  List<Map<String, String>> get _filteredFaqs {
+    if (_searchQuery.isEmpty) return _allFaqs;
+    final query = _searchQuery.toLowerCase();
+    return _allFaqs
+        .where((faq) =>
+            faq['question']!.toLowerCase().contains(query) ||
+            faq['answer']!.toLowerCase().contains(query))
+        .toList();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,45 +80,79 @@ class _FaqsScreenState extends State<FaqsScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFE5E7EB)),
               ),
-              child: const TextField(
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) => setState(() {
+                  _searchQuery = value;
+                  expandedIndex = null;
+                }),
                 decoration: InputDecoration(
-                  icon: Icon(Icons.search, color: Color(0xFF9CA3AF)),
+                  icon: const Icon(Icons.search, color: Color(0xFF9CA3AF)),
                   hintText: 'Search FAQs...',
-                  hintStyle: TextStyle(
+                  hintStyle: const TextStyle(
                     fontSize: 14,
                     color: Color(0xFF9CA3AF),
                   ),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? GestureDetector(
+                          onTap: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                              expandedIndex = null;
+                            });
+                          },
+                          child: const Icon(Icons.close,
+                              color: Color(0xFF9CA3AF), size: 20),
+                        )
+                      : null,
                 ),
               ),
             ),
             const SizedBox(height: 24),
 
             /// FAQ Items
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Column(
-                children: [
-                  for (int i = 0; i < faqs.length; i++) ...[
-                    _faqItem(
-                      question: faqs[i]['question']!,
-                      answer: faqs[i]['answer']!,
-                      isExpanded: expandedIndex == i,
-                      onTap: () {
-                        setState(() {
-                          expandedIndex = expandedIndex == i ? null : i;
-                        });
-                      },
-                    ),
-                    if (i < faqs.length - 1) const Divider(height: 1),
+            if (_filteredFaqs.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Text(
+                  'No FAQs found matching your search.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                ),
+              )
+            else
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Column(
+                  children: [
+                    for (int i = 0; i < _filteredFaqs.length; i++) ...[
+                      _faqItem(
+                        question: _filteredFaqs[i]['question']!,
+                        answer: _filteredFaqs[i]['answer']!,
+                        isExpanded: expandedIndex == i,
+                        onTap: () {
+                          setState(() {
+                            expandedIndex = expandedIndex == i ? null : i;
+                          });
+                        },
+                      ),
+                      if (i < _filteredFaqs.length - 1)
+                        const Divider(height: 1),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
             const SizedBox(height: 32),
 
             /// Contact Support Section
@@ -125,10 +176,14 @@ class _FaqsScreenState extends State<FaqsScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        context.goNextScreen(AppRoutes.contactSupport);
+                      onPressed: () async {
+                        final url = Uri.parse(
+                            'mailto:Support@africinnovate.com?subject=HealthBridge Support Request');
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(url);
+                        }
                       },
-                      icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                      icon: const Icon(Icons.email_outlined, size: 18),
                       label: const Text('Contact Support'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: const Color(0xFF6B7280),

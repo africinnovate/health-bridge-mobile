@@ -82,6 +82,15 @@ class HospitalRepository {
     }
   }
 
+  Future<ResponseStatusM> uploadHospitalImage(
+      String filePath, String hospitalId) async {
+    try {
+      return await hospitalApi.uploadHospitalImage(filePath, hospitalId);
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
+
   /// Get blood requests for hospital
   Future<ResponseStatusM> getBloodRequests({String? status}) async {
     try {

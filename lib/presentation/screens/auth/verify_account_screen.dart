@@ -161,7 +161,7 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
 
                 // Subtitle with email
                 Text(
-                  "We sent a 6-digit code to your email/phone. \nEnter it below to continue.",
+                  "We sent a 4-digit code to your email/phone. \nEnter it below to continue.",
                   style: const TextStyle(
                     fontSize: 14,
                     color: AppColors.textGray,

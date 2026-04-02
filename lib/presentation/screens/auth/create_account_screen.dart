@@ -7,6 +7,7 @@ import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/input_text_field_wg.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -30,6 +31,37 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   bool get shouldProceed =>
       emailController.text.trim().isNotEmpty &&
       passwordController.text.trim().isNotEmpty;
+
+  Future<void> _handleGoogleSignIn() async {
+    final authProvider = context.read<AuthProvider>();
+    final role = authProvider.role;
+
+    if (role.isEmpty) {
+      SnackBarUtils.showError(context, 'Please select a role first');
+      return;
+    }
+
+    context.showLoadingDialog();
+    final error = await authProvider.googleSignIn(role: role);
+
+    if (!mounted) return;
+    context.hideLoadingDialog();
+
+    if (error != null) {
+      SnackBarUtils.showError(context, error);
+      return;
+    }
+
+    if (role == 'donor') {
+      context.goNextScreen(AppRoutes.donorRootScreen);
+    } else if (role == 'specialist') {
+      context.goNextScreen(AppRoutes.specialistRootScreen);
+    } else if (role == 'patient') {
+      context.goNextScreen(AppRoutes.patientRootScreen);
+    } else {
+      context.goNextScreen(AppRoutes.hospitalRootScreen);
+    }
+  }
 
   void createAccount() async {
     context.hideKeyboard();
@@ -188,22 +220,13 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 
               /// Google Button
               SocialButton(
-                icon: 'G',
+                icon: SvgPicture.asset(
+                  'assets/icons/google_icon.svg',
+                  width: 22,
+                  height: 22,
+                ),
                 label: 'Continue with Google',
-                onTap: () {
-                  SnackBarUtils.showInfo(context, "Google Sign-In coming soon");
-                },
-              ),
-
-              const SizedBox(height: 12),
-
-              /// Apple Button
-              SocialButton(
-                icon: '',
-                label: 'Continue with Apple',
-                onTap: () {
-                  SnackBarUtils.showInfo(context, "Apple Sign-In coming soon");
-                },
+                onTap: _handleGoogleSignIn,
               ),
 
               const SizedBox(height: 28),
@@ -264,7 +287,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
 /// Social Button
 /// ------------------------------------------------------------
 class SocialButton extends StatelessWidget {
-  final String icon;
+  final Widget icon;
   final String label;
   final VoidCallback onTap;
 
@@ -288,10 +311,7 @@ class SocialButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              icon,
-              style: const TextStyle(fontSize: 20),
-            ),
+            icon,
             const SizedBox(width: 10),
             Text(
               label,

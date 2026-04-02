@@ -164,4 +164,50 @@ class AuthApi {
 
     return ResponseUtils.getApiResponse(response);
   }
+
+  /// Social login/register (Google, etc.)
+  Future<ResponseStatusM> socialLogin({
+    required String accessToken,
+    required String provider,
+    String? role,
+  }) async {
+    final body = {
+      'access_token': accessToken,
+      'provider': provider,
+      if (role != null) 'role': role,
+    };
+
+    final response = await apiClient.post(
+      AppConstants.socialLoginEndpoint,
+      data: body,
+    );
+
+    return ResponseUtils.getApiResponse(response);
+  }
+
+  /// Permanently delete the authenticated user's account
+  Future<ResponseStatusM> deleteAccount() async {
+    var header = await Injection.tokenHeaders();
+
+    final response = await apiClient.post(
+      AppConstants.deleteAccountEP,
+      headers: header,
+    );
+
+    return ResponseUtils.getApiResponse(response);
+  }
+
+  /// Upload user profile image (multipart/form-data, field name: 'image')
+  Future<ResponseStatusM> uploadImage(String filePath) async {
+    var header = await Injection.tokenHeaders();
+
+    final response = await apiClient.uploadFile(
+      AppConstants.uploadImageEP,
+      filePath: filePath,
+      fieldName: 'image',
+      headers: header,
+    );
+
+    return ResponseUtils.getApiResponse(response);
+  }
 }

@@ -6,9 +6,11 @@ import 'package:HealthBridge/data/dataSource/secureData/secure_storage.dart';
 class HospitalModel implements JsonSerializable {
   final bool acceptingDonors;
   final String? accreditationDocUrl;
+  final String? profileImage;
   final String address;
   final String city;
   final String country;
+  final String? state;
   final DateTime createdAt;
   final String donatingOperatingHours;
   final String email;
@@ -25,9 +27,11 @@ class HospitalModel implements JsonSerializable {
   HospitalModel({
     required this.acceptingDonors,
     this.accreditationDocUrl,
+    this.profileImage,
     required this.address,
     required this.city,
     required this.country,
+    this.state,
     required this.createdAt,
     required this.donatingOperatingHours,
     required this.email,
@@ -45,9 +49,11 @@ class HospitalModel implements JsonSerializable {
   factory HospitalModel.fromJson(Map<String, dynamic> json) => HospitalModel(
         acceptingDonors: json['accepting_donors'] as bool,
         accreditationDocUrl: json['accreditation_doc_url'] as String?,
+        profileImage: json['profile_image'] as String?,
         address: json['address'] as String,
         city: json['city'] as String,
         country: json['country'] as String,
+        state: json['state'] as String?,
         createdAt: DateTime.parse(json['created_at'] as String),
         donatingOperatingHours: json['donating_operating_hours'] as String,
         email: json['email'] as String,
@@ -70,6 +76,7 @@ class HospitalModel implements JsonSerializable {
         'address': address,
         'city': city,
         'country': country,
+        if (state != null) 'state': state,
         'created_at': createdAt.toIso8601String(),
         'donating_operating_hours': donatingOperatingHours,
         'email': email,

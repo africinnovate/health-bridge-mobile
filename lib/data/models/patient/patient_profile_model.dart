@@ -1,5 +1,6 @@
 import '../../dataSource/secureData/secure_storage.dart';
 
+// use for both patient and donor since they have the same fields, just different roles
 class PatientProfileModel implements JsonSerializable {
   final String id;
   final String email;

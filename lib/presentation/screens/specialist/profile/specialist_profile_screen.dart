@@ -37,7 +37,7 @@ class SpecialistProfileScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      _profileHeader(profile),
+                      _profileHeader(context, profile),
                       const SizedBox(height: 16),
                       _personalInformation(context, profile),
                       const SizedBox(height: 16),
@@ -106,7 +106,7 @@ class SpecialistProfileScreen extends StatelessWidget {
   }
 
   /// ---------------- Header ----------------
-  Widget _profileHeader(profile) {
+  Widget _profileHeader(BuildContext context, profile) {
     final fullName = profile.firstName.isNotEmpty || profile.lastName.isNotEmpty
         ? '${profile.firstName} ${profile.lastName}'.trim()
         : profile.email;
@@ -114,30 +114,23 @@ class SpecialistProfileScreen extends StatelessWidget {
     return _card(
       child: Column(
         children: [
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 52,
-                backgroundImage: profile.imageUrl != null
-                    ? NetworkImage(profile.imageUrl!)
-                    : const AssetImage('assets/images/patient.png')
-                        as ImageProvider,
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: 30,
-                  height: 30,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Color(0xFFD32F2F),
-                  ),
-                  child: const Icon(Icons.camera_alt,
-                      size: 16, color: Colors.white),
-                ),
-              )
-            ],
+          GestureDetector(
+            onTap: profile.imageUrl != null
+                ? () => context.goNextScreenWithData(
+                      AppRoutes.fullImageView,
+                      extra: {
+                        'imageUrl': profile.imageUrl!,
+                        'title': '${profile.firstName} ${profile.lastName}'.trim(),
+                      },
+                    )
+                : null,
+            child: CircleAvatar(
+              radius: 52,
+              backgroundImage: profile.imageUrl != null
+                  ? NetworkImage(profile.imageUrl!)
+                  : const AssetImage('assets/images/patient.png')
+                      as ImageProvider,
+            ),
           ),
           const SizedBox(height: 12),
           Text(
@@ -326,6 +319,8 @@ class SpecialistProfileScreen extends StatelessWidget {
           _accountTile(Icons.description, 'Terms & Conditions'),
           _accountTile(Icons.language, 'Language', trailing: 'English'),
           _accountTile(Icons.privacy_tip, 'Privacy Policy'),
+          _accountTile(Icons.delete, 'Delete Account',
+              onTap: () => showDeleteAccountDialog(context)),
         ],
       ),
     );

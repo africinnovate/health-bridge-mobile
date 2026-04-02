@@ -1,5 +1,11 @@
+import 'package:HealthBridge/core/constants/app_routes.dart';
+import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/presentation/providers/auth_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../presentation/widgets/thank_you_dialog.dart';
+import 'snackbar_utils.dart';
 
 void showThankYouDialog(
   BuildContext context, {
@@ -75,3 +81,43 @@ showConfirmDialog(
   onConfirm: deleteItem,
 );
  */
+
+/// Shows a confirmation dialog then permanently deletes the account.
+/// Navigates to [AppRoutes.login] on success.
+void showDeleteAccountDialog(BuildContext context) {
+  showConfirmDialog(
+    context,
+    title: 'Delete Account',
+    message:
+        'Are you sure you want to permanently delete your account? This action cannot be undone.',
+    confirmText: 'Delete',
+    cancelText: 'Cancel',
+    icon: Icons.delete_forever_outlined,
+    onConfirm: () => _performDeleteAccount(context),
+  );
+}
+
+Future<void> _performDeleteAccount(BuildContext context) async {
+  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+  context.showLoadingDialog();
+
+  try {
+    final error = await authProvider.deleteAccount();
+
+    if (error != null) {
+      if (context.mounted) {
+        context.hideLoadingDialog();
+        SnackBarUtils.showError(context, error);
+      }
+      return;
+    }
+
+    if (context.mounted) context.go(AppRoutes.login);
+  } catch (e) {
+    if (context.mounted) {
+      context.hideLoadingDialog();
+      SnackBarUtils.showError(context, 'An error occurred while deleting account');
+    }
+  }
+}

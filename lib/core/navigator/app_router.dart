@@ -27,6 +27,7 @@ import 'package:HealthBridge/presentation/screens/specialist/profile/specialist_
 import 'package:HealthBridge/presentation/screens/specialist/specialist_root_screen.dart';
 import 'package:go_router/go_router.dart';
 import '../../presentation/screens/general/document_viewer_screen.dart';
+import '../../presentation/screens/general/full_image_view_screen.dart';
 import '../../presentation/screens/general/profile/change_password_screen.dart';
 import '../../presentation/screens/general/profile/consultation_preference_screen.dart';
 import '../../presentation/screens/general/profile/contact_support_screen.dart';
@@ -35,7 +36,6 @@ import '../../presentation/screens/general/profile/edit_profile_screen.dart';
 import '../../presentation/screens/general/profile/faqs_screen.dart';
 import '../../presentation/screens/general/profile/help_center_screen.dart';
 import '../../presentation/screens/general/profile/language_settings_screen.dart';
-import '../../presentation/screens/general/profile/linked_accounts_screen.dart';
 import '../../presentation/screens/general/profile/notification_settings_screen.dart';
 import '../../presentation/screens/general/profile/privacy_settings_screen.dart';
 import '../../presentation/screens/hospital/donations/donation_appointment_detail_screen.dart';
@@ -159,7 +159,9 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.donationReceipt,
-        builder: (context, state) => DonationReceiptScreen(),
+        builder: (context, state) => DonationReceiptScreen(
+          donation: state.extra as DonationHistoryModel?,
+        ),
       ),
       GoRoute(
         path: AppRoutes.editProfileDonor,
@@ -204,10 +206,6 @@ class AppRouter {
       GoRoute(
         path: AppRoutes.changePassword,
         builder: (context, state) => ChangePasswordScreen(),
-      ),
-      GoRoute(
-        path: AppRoutes.linkedAccounts,
-        builder: (context, state) => LinkedAccountsScreen(),
       ),
       GoRoute(
         path: AppRoutes.donationHistory,
@@ -333,7 +331,8 @@ class AppRouter {
         path: AppRoutes.requestDetails,
         builder: (context, state) {
           final bloodRequest = state.extra as dynamic;
-          final status = bloodRequest?.requestStatus?.toLowerCase() ?? 'confirmed';
+          final status =
+              bloodRequest?.requestStatus?.toLowerCase() ?? 'confirmed';
           return RequestDetailsScreen(
             bloodRequest: bloodRequest,
             status: status,
@@ -393,6 +392,16 @@ class AppRouter {
         builder: (context, state) {
           final url = state.extra as String;
           return DocumentViewerScreen(url: url);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.fullImageView,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return FullImageViewScreen(
+            imageUrl: extra['imageUrl'] as String,
+            title: extra['title'] as String? ?? '',
+          );
         },
       ),
       GoRoute(

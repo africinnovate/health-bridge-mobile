@@ -1,6 +1,12 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
+import 'package:HealthBridge/core/constants/app_routes.dart';
+import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/presentation/providers/auth_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PrivacySettingsScreen extends StatefulWidget {
@@ -80,8 +86,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                     iconColor: const Color(0xFF3B82F6),
                     iconBg: const Color(0xFFEFF6FF),
                     title: 'Allow app analytics',
-                    subtitle:
-                        'Help us improve by sharing anonymous usage data',
+                    subtitle: 'Help us improve by sharing anonymous usage data',
                     value: allowAppAnalytics,
                     onChanged: (value) {
                       setState(() => allowAppAnalytics = value);
@@ -122,73 +127,35 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Column(
-                children: [
-                  ListTile(
-                    onTap: () {
-                      // Handle download data
-                    },
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.download,
-                        color: Color(0xFF6B7280),
-                        size: 20,
-                      ),
-                    ),
-                    title: const Text(
-                      'Download My Data',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    trailing: const Icon(
-                      Icons.chevron_right,
-                      color: Color(0xFF9CA3AF),
-                    ),
+              child: ListTile(
+                onTap: () => _showDeleteAccountDialog(),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  const Divider(height: 1, indent: 72),
-                  ListTile(
-                    onTap: () {
-                      // Handle delete account
-                    },
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEE2E2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.delete_outline,
-                        color: AppColors.red,
-                        size: 20,
-                      ),
-                    ),
-                    title: const Text(
-                      'Delete My Account',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.red,
-                      ),
-                    ),
-                    trailing: const Icon(
-                      Icons.chevron_right,
-                      color: Color(0xFF9CA3AF),
-                    ),
+                  child: const Icon(
+                    Icons.delete_outline,
+                    color: AppColors.red,
+                    size: 20,
                   ),
-                ],
+                ),
+                title: const Text(
+                  'Delete My Account',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.red,
+                  ),
+                ),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: Color(0xFF9CA3AF),
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -240,6 +207,66 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         ),
       ),
     );
+  }
+
+  void _showDeleteAccountDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Delete Account',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        content: const Text(
+          'Are you sure you want to permanently delete your account? This action cannot be undone.',
+          style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF6B7280)),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _performDeleteAccount();
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.red, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performDeleteAccount() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    context.showLoadingDialog();
+
+    try {
+      final error = await authProvider.deleteAccount();
+
+      if (error != null) {
+        if (!mounted) return;
+        context.hideLoadingDialog();
+        SnackBarUtils.showError(context, error);
+        return;
+      }
+
+      if (!mounted) return;
+      context.go(AppRoutes.login);
+    } catch (e) {
+      if (!mounted) return;
+      context.hideLoadingDialog();
+      SnackBarUtils.showError(context, 'An error occurred while deleting account');
+    }
   }
 
   Widget _privacyOption({

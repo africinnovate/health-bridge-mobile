@@ -116,6 +116,20 @@ class HospitalApi {
     return ResponseUtils.getApiResponse(response);
   }
 
+  /// Upload hospital profile image
+  Future<ResponseStatusM> uploadHospitalImage(
+      String filePath, String hospitalId) async {
+    var header = await Injection.tokenHeaders();
+    final response = await apiClient.uploadFile(
+      '${AppConstants.uploadHospitalImageEP}/$hospitalId',
+      filePath: filePath,
+      fieldName: 'image',
+      headers: header,
+    );
+
+    return ResponseUtils.getApiResponse(response);
+  }
+
   /// Get blood requests for hospital
   Future<ResponseStatusM> getBloodRequests({String? status}) async {
     var header = await Injection.tokenHeaders();

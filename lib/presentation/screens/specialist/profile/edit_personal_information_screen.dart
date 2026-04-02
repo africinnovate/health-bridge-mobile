@@ -1,8 +1,13 @@
+import 'dart:io';
+
+import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/presentation/providers/auth_provider.dart';
 import 'package:HealthBridge/presentation/providers/specialist_provider.dart';
 import 'package:HealthBridge/presentation/widgets/input_text_field_wg.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../widgets/cancel_button.dart';
@@ -24,6 +29,9 @@ class _EditPersonalInformationScreenState
   final TextEditingController cityController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController primaryPhoneController = TextEditingController();
+
+  File? _pickedImage;
+  final ImagePicker _imagePicker = ImagePicker();
 
   String? selectedCountry;
   String? selectedState;
@@ -79,6 +87,47 @@ class _EditPersonalInformationScreenState
     }
   }
 
+  Future<void> _pickImage(ImageSource source) async {
+    final XFile? picked =
+        await _imagePicker.pickImage(source: source, imageQuality: 80);
+    if (picked != null) {
+      setState(() => _pickedImage = File(picked.path));
+    }
+  }
+
+  void _showPhotoOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppColors.red),
+              title: const Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppColors.red),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _saveChanges() async {
     context.hideKeyboard();
 
@@ -113,6 +162,20 @@ class _EditPersonalInformationScreenState
     }
 
     final provider = Provider.of<SpecialistProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    context.showLoadingDialog();
+
+    // Upload new photo if picked
+    if (_pickedImage != null) {
+      final (_, uploadError) = await authProvider.uploadImage(_pickedImage!.path);
+      if (uploadError != null) {
+        if (!mounted) return;
+        context.hideLoadingDialog();
+        SnackBarUtils.showError(context, uploadError);
+        return;
+      }
+    }
 
     final error = await provider.updateSpecialistProfile(
       firstName: firstNameController.text.trim(),
@@ -124,11 +187,15 @@ class _EditPersonalInformationScreenState
       primaryPhone: primaryPhoneController.text.trim(),
     );
 
+    context.hideLoadingDialog();
+
     if (error != null) {
+      if (!mounted) return;
       SnackBarUtils.showError(context, error);
       return;
     }
 
+    if (!mounted) return;
     SnackBarUtils.showSuccess(context, "Personal information updated successfully!");
     context.goBack();
   }
@@ -167,30 +234,46 @@ class _EditPersonalInformationScreenState
                 children: [
                   Consumer<SpecialistProvider>(
                     builder: (context, provider, child) {
-                      final profile = provider.specialistProfileM;
-                      return CircleAvatar(
-                        radius: 52,
-                        backgroundImage: profile?.imageUrl != null
-                            ? NetworkImage(profile!.imageUrl!)
-                            : const AssetImage('assets/images/patient.png')
-                                as ImageProvider,
+                      final imageUrl = provider.specialistProfileM?.imageUrl;
+                      ImageProvider imageProvider;
+                      if (_pickedImage != null) {
+                        imageProvider = FileImage(_pickedImage!);
+                      } else if (imageUrl != null && imageUrl.isNotEmpty) {
+                        imageProvider = NetworkImage(imageUrl);
+                      } else {
+                        imageProvider =
+                            const AssetImage('assets/images/patient.png');
+                      }
+                      return Container(
+                        width: 104,
+                        height: 104,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          image: DecorationImage(
+                            image: imageProvider,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       );
                     },
                   ),
                   Positioned(
                     bottom: 0,
                     right: 0,
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xFFD32F2F),
+                    child: GestureDetector(
+                      onTap: _showPhotoOptions,
+                      child: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Color(0xFFD32F2F),
+                        ),
+                        child: const Icon(Icons.camera_alt,
+                            size: 16, color: Colors.white),
                       ),
-                      child: const Icon(Icons.camera_alt,
-                          size: 16, color: Colors.white),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -295,6 +378,7 @@ class _EditPersonalInformationScreenState
             InputTextFieldWG(
               controller: primaryPhoneController,
               hintText: "+234 800 555 1234",
+              keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 24),
             Consumer<SpecialistProvider>(

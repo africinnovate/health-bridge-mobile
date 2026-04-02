@@ -57,6 +57,7 @@ class HospitalProvider extends ChangeNotifier {
 
     if (ResponseUtils.isSuccessful(res)) {
       if (res.data == null) return 'Invalid server response';
+      if ((res.data as List).isEmpty) return "Hospital not found";
       final profile = HospitalModel.fromJson(res.data[0]);
       // if (!profile.verify) return AppConstants.emailUnverified;
 
@@ -363,6 +364,7 @@ class HospitalProvider extends ChangeNotifier {
       'hospital_type': _hospitalProfileFormData['hospital_type'],
       'address': _hospitalProfileFormData['address'],
       'country': _hospitalProfileFormData['country'],
+      'state': _hospitalProfileFormData['state'] ?? '',
       'city': _hospitalProfileFormData['city'],
       'email': _hospitalProfileFormData['email'],
       'primary_phone': _hospitalProfileFormData['primary_phone'],
@@ -461,5 +463,20 @@ class HospitalProvider extends ChangeNotifier {
       notifyListeners();
       return 'Error uploading document';
     }
+  }
+
+  /// Upload hospital profile image. Returns (imageUrl, error).
+  Future<(String?, String?)> uploadHospitalImage(
+      String filePath, String hospitalId) async {
+    final res = await getResponse(
+        hospitalRepository.uploadHospitalImage(filePath, hospitalId));
+
+    if (ResponseUtils.isSuccessful(res)) {
+      final imageUrl = res.data as String?;
+      // Refresh profile so the new image reflects in the UI
+      await getHospitalProfile();
+      return (imageUrl, null);
+    }
+    return (null, res.message ?? 'Failed to upload image');
   }
 }

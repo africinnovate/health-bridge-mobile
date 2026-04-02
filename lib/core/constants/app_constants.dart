@@ -37,6 +37,9 @@ class AppConstants {
   /// /api/auth/forgot-password
   static const String forgotPasswordEndpoint = '/api/auth/forgot-password';
 
+  /// /api/auth/social-login
+  static const String socialLoginEndpoint = '/api/auth/social-login';
+
   /// /api/auth/reset-password (with code from email)
   static const String resetPasswordWithCodeEndpoint =
       '/api/auth/reset-password';
@@ -91,6 +94,9 @@ class AppConstants {
   /// /api/hospitals/create
   static const String createHospitalEP = "/api/hospitals/create";
 
+  /// /api/hospitals/upload-image/{hospital_id}
+  static const String uploadHospitalImageEP = "/api/hospitals/upload-image";
+
   /// /api/hospitals/settings/{hospital_id}  -get hospital notification settings
   static const String hospitalNotificationSettingEP = "/api/hospitals/settings";
 
@@ -126,6 +132,19 @@ class AppConstants {
 
   /// /api/user-settings - get and update user notification settings
   static const String userSettingsEP = "/api/user-settings";
+
+  /// /api/user-settings/upload-image - upload user profile image
+  static const String uploadImageEP = "/api/user-settings/upload-image";
+
+  /// /api/auth/delete-account - permanently delete authenticated user's account
+  static const String deleteAccountEP = "/api/auth/delete-account";
+
+  /// /api/notifications - get paginated notifications
+  static const String notificationsEP = "/api/notifications";
+
+  /// /api/notifications/read-all - mark all notifications as read
+  static const String markAllReadEP = "/api/notifications/read-all";
+  // mark single: PATCH /api/notifications/{id}/read
 
   // // OTP
   static const int otpLength = 4;

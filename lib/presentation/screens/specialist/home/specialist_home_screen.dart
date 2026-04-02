@@ -27,7 +27,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
   Future<void> _loadData() async {
     await Future.wait([
       context.read<SpecialistProvider>().getSpecialistProfile(),
-      context.read<AppointmentProvider>().getAllAppointments('patient'),
+      context.read<AppointmentProvider>().getAppointments('specialist'),
     ]);
   }
 
@@ -38,9 +38,11 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
         final profile = specialistProvider.specialistProfileM;
         final all = appointmentProvider.appointments ?? [];
 
+        final requests = all.where((a) => a.status == 'created').toList()
+          ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+
         final upcoming = all
-            .where((a) =>
-                a.status == 'confirmed' || a.status == 'rescheduled')
+            .where((a) => a.status == 'confirmed' || a.status == 'rescheduled')
             .toList()
           ..sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
 
@@ -48,8 +50,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
         final upcomingList = upcoming.take(3).toList();
 
         final recentActivity = all
-            .where(
-                (a) => a.status == 'completed' || a.status == 'cancelled')
+            .where((a) => a.status == 'completed' || a.status == 'cancelled')
             .toList()
           ..sort((a, b) => b.scheduledTime.compareTo(a.scheduledTime));
 
@@ -86,7 +87,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
 
                         const SizedBox(height: 24),
 
-                        /// Appointment Requests (seed data)
+                        /// Appointment Requests
                         _sectionHeader(
                           'Appointment Requests',
                           onPress: () => context.goNextScreenWithData(
@@ -95,15 +96,37 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        _requestCard(
-                          name: 'James Adebayo',
-                          info: 'Video Call • Tomorrow, 2:00 PM',
-                        ),
-                        const SizedBox(height: 12),
-                        _requestCard(
-                          name: 'Amaka Okonkwo',
-                          info: 'Audio Call • Friday, 10:00 AM',
-                        ),
+                        if (requests.isEmpty && !appointmentProvider.isLoading)
+                          _emptyCard('No pending requests')
+                        else if (appointmentProvider.isLoading)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else
+                          ...requests.take(2).map((apt) {
+                            final date =
+                                DateFormat('MMM d').format(apt.scheduledTime);
+                            final time =
+                                DateFormat('hh:mm a').format(apt.scheduledTime);
+                            final isVideo = apt.appointmentType
+                                .toLowerCase()
+                                .contains('video');
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _requestCard(
+                                name: apt.userId,
+                                info:
+                                    '${isVideo ? 'Video Call' : 'In Person'} • $date, $time',
+                                onTap: () => context.goNextScreenWithData(
+                                  AppRoutes.specialistAppointDetailScreen,
+                                  extra: apt,
+                                ),
+                              ),
+                            );
+                          }),
 
                         const SizedBox(height: 24),
 
@@ -142,9 +165,8 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
                               icon: isCompleted
                                   ? Icons.check_circle
                                   : Icons.cancel_outlined,
-                              color: isCompleted
-                                  ? AppColors.green
-                                  : AppColors.red,
+                              color:
+                                  isCompleted ? AppColors.green : AppColors.red,
                               title: isCompleted
                                   ? 'Consultation completed'
                                   : 'Appointment cancelled',
@@ -171,8 +193,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
 
     return Container(
       color: Colors.white,
-      padding:
-          const EdgeInsets.only(left: 20, right: 20, bottom: 16, top: 35),
+      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 16, top: 35),
       child: Row(
         children: [
           GestureDetector(
@@ -192,9 +213,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                firstName.isNotEmpty
-                    ? 'Hello, Dr $firstName'
-                    : 'Hello, Doctor',
+                firstName.isNotEmpty ? 'Hello, Dr $firstName' : 'Hello, Doctor',
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -207,22 +226,26 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
             ],
           ),
           const Spacer(),
-          Stack(
-            children: [
-              const Icon(Icons.notifications_none, size: 26),
-              Positioned(
-                right: 2,
-                top: 2,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.red,
-                    shape: BoxShape.circle,
+          IconButton(
+            onPressed: () =>
+                context.goNextScreen(AppRoutes.patientNotification),
+            icon: Stack(
+              children: [
+                const Icon(Icons.notifications_none, size: 26),
+                Positioned(
+                  right: 2,
+                  top: 2,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: AppColors.red,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -255,14 +278,12 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
                   const Text(
                     'Patient Appointment',
                     style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600),
+                        color: Colors.white, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     apt.appointmentType.toUpperCase(),
-                    style: const TextStyle(
-                        color: Colors.white70, fontSize: 12),
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ],
               ),
@@ -272,8 +293,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
                 height: 44,
                 decoration: const BoxDecoration(
                     color: Colors.white24, shape: BoxShape.circle),
-                child:
-                    const Icon(Icons.videocam, color: Colors.white),
+                child: const Icon(Icons.videocam, color: Colors.white),
               ),
             ],
           ),
@@ -317,8 +337,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
   }
 
   Widget _upcomingCard(AppointmentModel apt) {
-    final dateTime =
-        DateFormat('MMM d • h:mm a').format(apt.scheduledTime);
+    final dateTime = DateFormat('MMM d • h:mm a').format(apt.scheduledTime);
 
     return GestureDetector(
       onTap: () => context.goNextScreenWithData(
@@ -336,8 +355,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
             Row(
               children: [
                 const CircleAvatar(
-                  backgroundImage:
-                      AssetImage('assets/images/patient.png'),
+                  backgroundImage: AssetImage('assets/images/patient.png'),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -353,8 +371,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
                         children: [
                           const Icon(Icons.access_time, size: 14),
                           const SizedBox(width: 4),
-                          Text(dateTime,
-                              style: const TextStyle(fontSize: 12)),
+                          Text(dateTime, style: const TextStyle(fontSize: 12)),
                         ],
                       ),
                     ],
@@ -362,8 +379,8 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
                 ),
                 if (apt.status == 'rescheduled')
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: const Color(0xFFEFF6FF),
                       borderRadius: BorderRadius.circular(6),
@@ -431,12 +448,17 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
     );
   }
 
-  Widget _requestCard({required String name, required String info}) {
+  Widget _requestCard({
+    required String name,
+    required String info,
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
-      onTap: () => context.goNextScreenWithData(
-        AppRoutes.specialistAppointDetailScreen,
-        extra: null,
-      ),
+      onTap: onTap ??
+          () => context.goNextScreenWithData(
+                AppRoutes.specialistAppointDetailScreen,
+                extra: null,
+              ),
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -455,15 +477,13 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(name,
-                        style:
-                            const TextStyle(fontWeight: FontWeight.w500)),
+                        style: const TextStyle(fontWeight: FontWeight.w500)),
                     const SizedBox(height: 4),
                     Row(
                       children: [
                         const Icon(Icons.videocam, size: 14),
                         const SizedBox(width: 4),
-                        Text(info,
-                            style: const TextStyle(fontSize: 12)),
+                        Text(info, style: const TextStyle(fontSize: 12)),
                       ],
                     ),
                   ],
@@ -517,8 +537,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
       child: Text(
         message,
         textAlign: TextAlign.center,
-        style: const TextStyle(
-            fontSize: 13, color: Color(0xFF6B7280)),
+        style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
       ),
     );
   }
@@ -542,8 +561,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-                color: color.withOpacity(.15),
-                shape: BoxShape.circle),
+                color: color.withOpacity(.15), shape: BoxShape.circle),
             child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 12),
@@ -552,12 +570,10 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title,
-                    style:
-                        const TextStyle(fontWeight: FontWeight.w500)),
+                    style: const TextStyle(fontWeight: FontWeight.w500)),
                 const SizedBox(height: 2),
                 Text(time,
-                    style: const TextStyle(
-                        fontSize: 12, color: Colors.grey)),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
               ],
             ),
           ),
@@ -568,12 +584,10 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
 
   Widget _sectionTitle(String title) {
     return Text(title,
-        style: const TextStyle(
-            fontSize: 16, fontWeight: FontWeight.w600));
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600));
   }
 
-  Widget _sectionHeader(String title,
-      {required VoidCallback onPress}) {
+  Widget _sectionHeader(String title, {required VoidCallback onPress}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -581,8 +595,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
         GestureDetector(
           onTap: onPress,
           child: const Text('View All',
-              style:
-                  TextStyle(fontSize: 13, color: AppColors.red)),
+              style: TextStyle(fontSize: 13, color: AppColors.red)),
         ),
       ],
     );
@@ -596,12 +609,10 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
         height: 44,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(10)),
+            color: color, borderRadius: BorderRadius.circular(10)),
         child: Text(text,
             style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w500)),
+                color: Colors.white, fontWeight: FontWeight.w500)),
       ),
     );
   }
@@ -619,9 +630,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
           border: Border.all(color: textColor),
         ),
         child: Text(text,
-            style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.w500)),
+            style: TextStyle(color: textColor, fontWeight: FontWeight.w500)),
       ),
     );
   }
@@ -647,13 +656,11 @@ class _Info extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style: const TextStyle(
-                color: Colors.white70, fontSize: 12)),
+            style: const TextStyle(color: Colors.white70, fontSize: 12)),
         const SizedBox(height: 2),
         Text(value,
             style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w500)),
+                color: Colors.white, fontWeight: FontWeight.w500)),
       ],
     );
   }

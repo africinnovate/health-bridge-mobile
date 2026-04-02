@@ -1,6 +1,7 @@
 import 'dart:core';
 
 import 'package:HealthBridge/core/constants/app_constants.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:HealthBridge/core/utils/response_utils.dart';
 import 'package:HealthBridge/data/dataSource/secureData/secure_storage.dart';
 import 'package:HealthBridge/data/models/auth/auth_model.dart';
@@ -73,6 +74,8 @@ class AuthProvider extends ChangeNotifier {
   patient - ronokinno+03@gmail.com
   specialist - ronokinno+04@gmail.com,
 
+africinnovate@gmail.com
+password
 
   ResponseStatusM {
    status_code: 201,
@@ -354,5 +357,70 @@ class AuthProvider extends ChangeNotifier {
       return null;
     }
     return res.message ?? 'Failed to update notification settings';
+  }
+
+  /// Google Sign-In — returns null on success, error message on failure.
+  /// Pass [role] only when signing up (e.g. 'donor', 'patient').
+  Future<String?> googleSignIn({String? role}) async {
+    try {
+      final googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+      await googleSignIn.signOut(); // ensure fresh account picker
+      final account = await googleSignIn.signIn();
+      if (account == null) return 'Sign-in cancelled';
+
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null) return 'Failed to get Google token';
+
+      final res = await getResponse(
+        authRepository.socialLogin(
+          accessToken: idToken,
+          provider: 'google',
+          role: role,
+        ),
+      );
+
+      if (ResponseUtils.isSuccessful(res)) {
+        if (res.data == null) return 'Invalid server response';
+
+        final authData = AuthDataModel.fromJson(res.data);
+        token = authData.token;
+        refreshToken = authData.refresh_token;
+        userModel = authData.user;
+
+        await SecureStorage.saveAuthData(authData);
+        return null; // success
+      }
+
+      return res.message ?? 'Google sign-in failed';
+    } catch (e) {
+      return 'Google sign-in error: $e';
+    }
+  }
+
+  /// Permanently delete the authenticated user's account
+  Future<String?> deleteAccount() async {
+    final res = await getResponse(authRepository.deleteAccount());
+
+    if (ResponseUtils.isSuccessful(res)) {
+      await SecureStorage.clearProfile();
+      token = null;
+      refreshToken = null;
+      userModel = null;
+      notifyListeners();
+      return null; // success
+    }
+    return res.message ?? 'Failed to delete account';
+  }
+
+  /// Upload user profile image. Returns (imageUrl, error) - imageUrl is non-null on success.
+  Future<(String?, String?)> uploadImage(String filePath) async {
+    final res = await getResponse(authRepository.uploadImage(filePath));
+
+    if (ResponseUtils.isSuccessful(res)) {
+      final imageUrl = res.data as String?;
+      return (imageUrl, null);
+    }
+    return (null, res.message ?? 'Failed to upload image');
   }
 }

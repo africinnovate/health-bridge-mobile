@@ -61,7 +61,9 @@ class _HospitalRootScreenState extends State<HospitalRootScreen> {
   Future<void> getProfile() async {
     // await Future.delayed(Duration(seconds: 3));
     var hospitalProvider = context.read<HospitalProvider>();
+    debugPrint("General log: the res issue");
     String? res = await hospitalProvider.getHospitalProfile();
+    debugPrint("General log: the res is - $res");
 
     if (res != null) {
       // check if email is verify

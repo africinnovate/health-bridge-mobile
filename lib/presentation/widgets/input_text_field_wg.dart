@@ -13,6 +13,7 @@ class InputTextFieldWG extends StatelessWidget {
   final IconData? suffixIcon;
   final Widget? suffixIconWidget;
   final int? maxLines;
+  final TextInputType? keyboardType;
   // final int? maxLength;
 
   const InputTextFieldWG({
@@ -27,6 +28,7 @@ class InputTextFieldWG extends StatelessWidget {
     this.suffixIcon,
     this.suffixIconWidget,
     this.maxLines = 1,
+    this.keyboardType,
   });
 
   @override
@@ -38,6 +40,7 @@ class InputTextFieldWG extends StatelessWidget {
       controller: controller,
       onChanged: onChanged,
       maxLines: maxLines,
+      keyboardType: keyboardType,
       style: TextStyle(color: textColor_, fontSize: 16),
       decoration: InputDecoration(
         hintText: hintText,

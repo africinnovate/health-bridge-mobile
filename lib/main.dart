@@ -20,6 +20,7 @@ void main() async {
         ChangeNotifierProvider.value(value: Injection.hospitalProvider),
         ChangeNotifierProvider.value(value: Injection.appointmentProvider),
         ChangeNotifierProvider.value(value: Injection.bloodRequestProvider),
+        ChangeNotifierProvider.value(value: Injection.notificationProvider),
       ],
       child: MyApp(),
     ),

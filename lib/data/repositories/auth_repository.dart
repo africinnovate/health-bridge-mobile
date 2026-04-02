@@ -142,4 +142,39 @@ class AuthRepository {
       return ResponseUtils.checkError(e);
     }
   }
+
+  /// Social login/register
+  Future<ResponseStatusM> socialLogin({
+    required String accessToken,
+    required String provider,
+    String? role,
+  }) async {
+    try {
+      return await authApi.socialLogin(
+        accessToken: accessToken,
+        provider: provider,
+        role: role,
+      );
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
+
+  /// Permanently delete the authenticated user's account
+  Future<ResponseStatusM> deleteAccount() async {
+    try {
+      return await authApi.deleteAccount();
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
+
+  /// Upload user profile image
+  Future<ResponseStatusM> uploadImage(String filePath) async {
+    try {
+      return await authApi.uploadImage(filePath);
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
 }

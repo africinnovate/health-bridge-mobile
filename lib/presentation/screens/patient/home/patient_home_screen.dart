@@ -43,13 +43,13 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
       'title': 'My Care History',
       'subtitle': 'View past consultations',
     },
-    {
-      'icon': Icons.person_search,
-      'iconColor': const Color(0xFF8B5CF6),
-      'iconBg': const Color(0xFFF3E8FF),
-      'title': 'Find Specialist',
-      'subtitle': 'Browse by specialty',
-    },
+    // {
+    //   'icon': Icons.person_search,
+    //   'iconColor': const Color(0xFF8B5CF6),
+    //   'iconBg': const Color(0xFFF3E8FF),
+    //   'title': 'Find Specialist',
+    //   'subtitle': 'Browse by specialty',
+    // },
   ];
 
   @override
@@ -120,8 +120,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
   AppointmentModel? get _nextAppointment {
     final all = context.read<AppointmentProvider>().appointments ?? [];
     final upcoming = all
-        .where(
-            (a) => a.status == 'confirmed' || a.status == 'rescheduled')
+        .where((a) => a.status == 'confirmed' || a.status == 'rescheduled')
         .toList();
     if (upcoming.isEmpty) return null;
     upcoming.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
@@ -147,7 +146,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     await prefs.setStringList(_recentlyViewedKey, ids);
     if (mounted) {
       setState(() => _recentlyViewedIds = ids);
-      context.goNextScreenWithData(AppRoutes.specialistDetails, extra: specialist);
+      context.goNextScreenWithData(AppRoutes.specialistDetails,
+          extra: specialist);
     }
   }
 
@@ -259,9 +259,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
 
   Widget _buildHeader(PatientProvider patientProvider) {
     final firstName = patientProvider.patientProfileM?.firstName;
-    final greetingName = (firstName != null && firstName.isNotEmpty)
-        ? firstName
-        : null;
+    final greetingName =
+        (firstName != null && firstName.isNotEmpty) ? firstName : null;
 
     return Container(
       width: double.infinity,
@@ -287,9 +286,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  greetingName != null
-                      ? 'Hello, $greetingName'
-                      : 'Hello there',
+                  greetingName != null ? 'Hello, $greetingName' : 'Hello there',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -307,7 +304,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
             ),
           ),
           IconButton(
-            onPressed: () => context.goNextScreen(AppRoutes.patientNotification),
+            onPressed: () =>
+                context.goNextScreen(AppRoutes.patientNotification),
             icon: Stack(
               children: [
                 const Icon(Icons.notifications_outlined, size: 24),
@@ -415,7 +413,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                   action['title'] == 'Find Specialist') {
                 widget.onNavigateToTab?.call(2);
               } else {
-                SnackBarUtils.showInfo(context, action['title'] as String);
+                context.goNextScreen(AppRoutes.careHistory);
               }
             },
           );
@@ -484,8 +482,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                               Text(
                                 specialist.rate!.toStringAsFixed(1),
                                 style: const TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600),
+                                    fontSize: 11, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -551,16 +548,13 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     final specialtyName =
         specialist != null ? _getSpecialtyName(specialist) : 'Consultation';
     final isSpecialist = appointment.specialistId.isNotEmpty;
-    final consultationType =
-        isSpecialist ? 'Specialist' : 'Blood Donation';
+    final consultationType = isSpecialist ? 'Specialist' : 'Blood Donation';
 
     String formattedDate = 'N/A';
     String formattedTime = 'N/A';
     try {
-      formattedDate =
-          DateFormat('MMM d').format(appointment.scheduledTime);
-      formattedTime =
-          DateFormat('h:mm a').format(appointment.scheduledTime);
+      formattedDate = DateFormat('MMM d').format(appointment.scheduledTime);
+      formattedTime = DateFormat('h:mm a').format(appointment.scheduledTime);
     } catch (_) {}
 
     return GestureDetector(
@@ -771,8 +765,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style:
-                  const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
             ),
           ],
         ),

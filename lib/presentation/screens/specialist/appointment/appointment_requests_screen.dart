@@ -1,9 +1,11 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
-import 'package:HealthBridge/core/constants/app_constants.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
-import 'package:HealthBridge/core/utils/dialog.dart';
+import 'package:HealthBridge/data/models/appointment/appointment_model.dart';
+import 'package:HealthBridge/presentation/providers/appointment_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_routes.dart';
 
@@ -19,8 +21,20 @@ class AppointmentRequestsScreen extends StatefulWidget {
 
 class _AppointmentRequestsScreenState extends State<AppointmentRequestsScreen> {
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAppointmentRequests();
+    });
+  }
+
+  Future<void> _loadAppointmentRequests() async {
+    final provider = context.read<AppointmentProvider>();
+    await provider.getAppointments('specialist', status: 'created');
+  }
+
+  @override
   Widget build(BuildContext context) {
-    print("What is show arrow ${widget.showBackArrow}");
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Appointment Requests',
@@ -28,21 +42,34 @@ class _AppointmentRequestsScreenState extends State<AppointmentRequestsScreen> {
       ),
       backgroundColor: AppColors.backgroundGray,
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.all(20),
-                itemCount: 3,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (_, index) {
-                  return AppointmentRequestCard(
-                    isVideo: index != 2,
-                  );
-                },
-              ),
-            ),
-          ],
+        child: Consumer<AppointmentProvider>(
+          builder: (context, provider, _) {
+            if (provider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final requests = (provider.appointments ?? [])
+                .where((a) => a.status == 'created')
+                .toList();
+
+            if (requests.isEmpty) {
+              return const Center(
+                child: Text(
+                  'No pending appointment requests',
+                  style: TextStyle(color: Color(0xFF6B7280)),
+                ),
+              );
+            }
+
+            return ListView.separated(
+              padding: const EdgeInsets.all(20),
+              itemCount: requests.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 16),
+              itemBuilder: (_, index) {
+                return AppointmentRequestCard(appointment: requests[index]);
+              },
+            );
+          },
         ),
       ),
     );
@@ -53,11 +80,11 @@ class _AppointmentRequestsScreenState extends State<AppointmentRequestsScreen> {
 /// Appointment Request Card
 /// ======================================================
 class AppointmentRequestCard extends StatelessWidget {
-  final bool isVideo;
+  final AppointmentModel appointment;
 
   const AppointmentRequestCard({
     super.key,
-    required this.isVideo,
+    required this.appointment,
   });
 
   @override
@@ -65,7 +92,7 @@ class AppointmentRequestCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         context.goNextScreenWithData(AppRoutes.specialistAppointDetailScreen,
-            extra: AppConstants.appointmentRequest);
+            extra: appointment);
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -98,10 +125,10 @@ class AppointmentRequestCard extends StatelessWidget {
           backgroundImage: AssetImage('assets/images/patient.png'),
         ),
         const SizedBox(width: 12),
-        const Expanded(
+        Expanded(
           child: Text(
-            'James Adebayo',
-            style: TextStyle(fontWeight: FontWeight.w600),
+            appointment.userId, // Display user ID as fallback (patient name not in model)
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),
       ],
@@ -109,6 +136,11 @@ class AppointmentRequestCard extends StatelessWidget {
   }
 
   Widget _metaRow() {
+    final isVideo =
+        appointment.appointmentType.toLowerCase().contains('video');
+    final formattedTime =
+        DateFormat('MMM d, h:mm a').format(appointment.scheduledTime);
+
     return Row(
       children: [
         Icon(
@@ -124,19 +156,21 @@ class AppointmentRequestCard extends StatelessWidget {
         const SizedBox(width: 12),
         const Icon(Icons.access_time, size: 16, color: Colors.grey),
         const SizedBox(width: 6),
-        const Text(
-          'Tomorrow, 2:00 PM',
-          style: TextStyle(fontSize: 13, color: Colors.grey),
+        Expanded(
+          child: Text(
+            formattedTime,
+            style: const TextStyle(fontSize: 13, color: Colors.grey),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );
   }
 
   Widget _symptomPreview() {
+    // Placeholder since model doesn't have description field
     return const Text(
-      'Experiencing chest pain and shortness of breath for 2 days. '
-      'Pain is mild to moderate, occurs mostly during physical activity. '
-      'Also feeling occasional dizziness...',
+      'Appointment request - tap to view details',
       maxLines: 3,
       overflow: TextOverflow.ellipsis,
       style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
@@ -151,11 +185,7 @@ class AppointmentRequestCard extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: _rescheduleButton(
-            onTap: () => context.goNextScreen(
-              AppRoutes.rescheduleOnSpecialist,
-            ),
-          ),
+          child: _rescheduleButton(context),
         ),
       ],
     );
@@ -164,14 +194,8 @@ class AppointmentRequestCard extends StatelessWidget {
   Widget _confirmButton(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        showThankYouDialog(context,
-            title: "Appointment confirm",
-            message:
-                "The appointment has been confirmed and the user has been notified",
-            buttonText: "Done", onContinue: () {
-          context.goNextScreenWithData(AppRoutes.specialistAppointDetailScreen,
-              extra: AppConstants.appointmentRequest);
-        });
+        context.goNextScreenWithData(AppRoutes.specialistAppointDetailScreen,
+            extra: appointment);
       },
       child: Container(
         height: 44,
@@ -191,9 +215,12 @@ class AppointmentRequestCard extends StatelessWidget {
     );
   }
 
-  Widget _rescheduleButton({required VoidCallback onTap}) {
+  Widget _rescheduleButton(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        context.goNextScreenWithData(AppRoutes.rescheduleOnSpecialist,
+            extra: appointment);
+      },
       child: Container(
         height: 44,
         alignment: Alignment.center,

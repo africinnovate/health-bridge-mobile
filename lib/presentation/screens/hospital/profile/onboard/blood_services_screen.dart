@@ -380,6 +380,7 @@ class _BloodServicesScreenState extends State<BloodServicesScreen> {
       'hospital_type': existingProfile.hospitalType,
       'address': existingProfile.address,
       'country': existingProfile.country,
+      'state': existingProfile.state ?? '',
       'city': existingProfile.city,
       'email': existingProfile.email,
       'primary_phone': existingProfile.primaryPhone,

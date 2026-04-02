@@ -111,6 +111,10 @@ class _HospitalSetupProfileScreenState extends State<HospitalSetupProfileScreen>
       _showError('Please select country');
       return false;
     }
+    if (stateController.text.trim().isEmpty) {
+      _showError('Please enter state/region');
+      return false;
+    }
     if (cityController.text.isEmpty) {
       _showError('Please enter city');
       return false;
@@ -160,6 +164,7 @@ class _HospitalSetupProfileScreenState extends State<HospitalSetupProfileScreen>
       'hospital_type': hospitalType,
       'address': addressController.text,
       'country': country,
+      'state': stateController.text,
       'city': cityController.text,
       'email': emailController.text,
       'primary_phone': primaryPhoneController.text,
@@ -334,6 +339,7 @@ class _HospitalSetupProfileScreenState extends State<HospitalSetupProfileScreen>
               InputTextFieldWG(
                 controller: primaryPhoneController,
                 hintText: "e.g, +234123456789",
+                keyboardType: TextInputType.phone,
               ),
 
               const SizedBox(height: 18),
@@ -343,6 +349,7 @@ class _HospitalSetupProfileScreenState extends State<HospitalSetupProfileScreen>
               InputTextFieldWG(
                 controller: emergencyPhoneController,
                 hintText: "e.g, +234123456789",
+                keyboardType: TextInputType.phone,
               ),
 
               const SizedBox(height: 6),

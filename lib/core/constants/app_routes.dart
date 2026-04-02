@@ -98,6 +98,7 @@ class AppRoutes {
   static const String linkedAccounts = '/linked-accounts';
   static const String donationHistory = '/donation-history';
   static const String appointments = '/appointments';
+  static const String fullImageView = '/full-image-view';
 
   // Specialist
   static const String specialistRootScreen = '/specialist-root-home';

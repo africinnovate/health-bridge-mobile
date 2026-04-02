@@ -66,7 +66,7 @@ class PatientApi {
     var header = await Injection.tokenHeaders();
     print("General log: header is $header");
     final body = {
-      "imageUrl": imageUrl ?? "",
+      "image_url": imageUrl,
       "address": address ?? "",
       "dob": dob ?? "",
       "first_name": firstName ?? "",

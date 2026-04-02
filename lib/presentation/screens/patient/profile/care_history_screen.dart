@@ -1,7 +1,10 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
-import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/data/models/appointment/appointment_model.dart';
+import 'package:HealthBridge/presentation/providers/appointment_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 class CareHistoryScreen extends StatefulWidget {
   const CareHistoryScreen({super.key});
@@ -11,133 +14,114 @@ class CareHistoryScreen extends StatefulWidget {
 }
 
 class _CareHistoryScreenState extends State<CareHistoryScreen> {
-  String selectedTab = 'All';
+  String _selectedTab = 'All';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppointmentProvider>().getAllAppointments('patient');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundGray,
-      appBar: const CustomAppBar(title: 'Care History'),
-      body: SafeArea(
-        child: Column(
-          children: [
-            /// Tabs
-            Padding(
-              padding: const EdgeInsets.all(20),
+      appBar: const CustomAppBar(title: 'Care History', showArrow: true),
+      body: Column(
+        children: [
+          /// Tabs
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Row(
                 children: [
                   Expanded(child: _tabButton('All')),
-                  const SizedBox(width: 12),
                   Expanded(child: _tabButton('Completed')),
-                  const SizedBox(width: 12),
-                  Expanded(child: _tabButton('Missed')),
+                  Expanded(child: _tabButton('Cancelled')),
                 ],
               ),
             ),
+          ),
 
-            /// List
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
-                  /// Completed Section
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDCFCE7),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      'Completed',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.green,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _historyCard(
-                    type: 'Video Call',
-                    icon: Icons.videocam,
-                    doctor: 'Chibundu Nwakaego Jackson',
-                    specialty: 'Cardiologist',
-                    date: 'May 3rd',
-                    time: '12:00 AM',
-                    status: 'completed',
-                  ),
-                  const SizedBox(height: 24),
+          /// Content
+          Expanded(
+            child: Consumer<AppointmentProvider>(
+              builder: (context, provider, _) {
+                if (provider.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                  /// Missed Section
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFEE2E2),
-                      borderRadius: BorderRadius.circular(6),
+                final all = (provider.appointments ?? [])
+                    .where((a) =>
+                        a.status == 'completed' || a.status == 'cancelled')
+                    .toList()
+                  ..sort(
+                      (a, b) => b.scheduledTime.compareTo(a.scheduledTime));
+
+                final List<AppointmentModel> displayed;
+                if (_selectedTab == 'Completed') {
+                  displayed =
+                      all.where((a) => a.status == 'completed').toList();
+                } else if (_selectedTab == 'Cancelled') {
+                  displayed =
+                      all.where((a) => a.status == 'cancelled').toList();
+                } else {
+                  displayed = all;
+                }
+
+                if (displayed.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.history,
+                            size: 64, color: Colors.grey.shade300),
+                        const SizedBox(height: 16),
+                        Text(
+                          _selectedTab == 'All'
+                              ? 'No care history yet'
+                              : 'No ${_selectedTab.toLowerCase()} appointments',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
                     ),
-                    child: const Text(
-                      'Missed Appointment',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.red,
-                      ),
-                    ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () =>
+                      provider.getAllAppointments('patient'),
+                  color: AppColors.red,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: displayed.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                    itemBuilder: (_, index) =>
+                        _buildCard(displayed[index]),
                   ),
-                  const SizedBox(height: 16),
-                  _historyCard(
-                    type: 'Voice Call',
-                    icon: Icons.call,
-                    doctor: 'Chibundu Nwakaego Jackson',
-                    specialty: 'Cardiologist',
-                    date: 'May 3rd',
-                    time: '12:00 AM',
-                    status: 'missed',
-                  ),
-                  const SizedBox(height: 12),
-                  _historyCard(
-                    type: 'In Person',
-                    icon: Icons.location_on,
-                    doctor: 'Chibundu Nwakaego Jackson',
-                    specialty: 'Cardiologist',
-                    date: 'May 3rd',
-                    time: '12:00 AM',
-                    status: 'missed',
-                    location: 'Private Clinic',
-                    address: '16 Hospital Road Eket Akwal-bom State',
-                  ),
-                  const SizedBox(height: 12),
-                  _historyCard(
-                    type: 'In Person',
-                    icon: Icons.location_on,
-                    doctor: 'Chibundu Nwakaego Jackson',
-                    specialty: 'Cardiologist',
-                    date: 'May 3rd',
-                    time: '12:00 AM',
-                    status: 'missed',
-                    location: 'Private Clinic',
-                    address: '16 Hospital Road Eket Akwal-bom State',
-                  ),
-                  const SizedBox(height: 40),
-                ],
-              ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _tabButton(String title) {
-    final isSelected = selectedTab == title;
+    final isSelected = _selectedTab == title;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedTab = title;
-        });
-      },
+      onTap: () => setState(() => _selectedTab = title),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
@@ -157,198 +141,136 @@ class _CareHistoryScreenState extends State<CareHistoryScreen> {
     );
   }
 
-  Widget _historyCard({
-    required String type,
-    required IconData icon,
-    required String doctor,
-    required String specialty,
-    required String date,
-    required String time,
-    required String status,
-    String? location,
-    String? address,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        SnackBarUtils.showInfo(context, "View consultation details");
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+  Widget _buildCard(AppointmentModel appointment) {
+    final isCancelled = appointment.status == 'cancelled';
+
+    final badgeText = isCancelled ? 'Cancelled' : 'Completed';
+    final badgeBg =
+        isCancelled ? const Color(0xFFFEE2E2) : const Color(0xFFDCFCE7);
+    final badgeColor = isCancelled ? AppColors.red : AppColors.green;
+
+    String formattedDate = 'N/A';
+    String formattedTime = 'N/A';
+    try {
+      formattedDate =
+          DateFormat('MMM d, yyyy').format(appointment.scheduledTime);
+      formattedTime = DateFormat('h:mm a').format(appointment.scheduledTime);
+    } catch (_) {}
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// Status badge
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: badgeBg,
+              borderRadius: BorderRadius.circular(6),
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// Type Icon
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, size: 20, color: const Color(0xFF6B7280)),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              type,
-              style: const TextStyle(
-                fontSize: 13,
+            child: Text(
+              badgeText,
+              style: TextStyle(
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF6B7280),
+                color: badgeColor,
               ),
             ),
-            const SizedBox(height: 12),
+          ),
+          const SizedBox(height: 16),
 
-            /// Doctor Info
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundImage: AssetImage('assets/images/patient.png'),
+          /// Appointment info
+          Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  'assets/images/patient.png',
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        doctor,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        specialty,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF9CA3AF),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            /// Location (if available)
-            if (location != null && address != null) ...[
-              Row(
-                children: [
-                  const Icon(Icons.location_on,
-                      size: 16, color: AppColors.red),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      location,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _formatAppointmentType(appointment.appointmentType),
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Padding(
-                padding: const EdgeInsets.only(left: 22),
-                child: Text(
-                  address,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF9CA3AF),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            /// Date & Time
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Date',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF9CA3AF),
-                        ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Ref: ${appointment.id.substring(0, 8).toUpperCase()}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6B7280),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        date,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Time',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF9CA3AF),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        time,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            /// Status or Cancel button
-            if (status == 'missed') ...[
-              const SizedBox(height: 16),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEE2E2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'Cancel',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.red,
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+
+          /// Type / Time / Date row
+          Row(
+            children: [
+              Expanded(
+                  child: _infoCol('Type',
+                      _formatAppointmentType(appointment.appointmentType))),
+              Expanded(child: _infoCol('Time', formattedTime)),
+              Expanded(child: _infoCol('Date', formattedDate)),
+            ],
+          ),
+        ],
       ),
+    );
+  }
+
+  String _formatAppointmentType(String type) {
+    return type
+        .split('_')
+        .map((w) => w.isEmpty
+            ? ''
+            : '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}')
+        .join(' ');
+  }
+
+  Widget _infoCol(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 }

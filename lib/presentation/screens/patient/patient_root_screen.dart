@@ -158,7 +158,7 @@ class _PatientRootScreenState extends State<PatientRootScreen> {
                   _buildNavItem(Icons.calendar_today_outlined,
                       Icons.calendar_today, 'Appointments', 1),
                   _buildNavItem(
-                      Icons.favorite_outline, Icons.favorite, 'Care', 2),
+                      Icons.favorite_outline, Icons.favorite, 'Book', 2),
                   _buildNavItem(
                       Icons.person_outline, Icons.person, 'Profile', 3),
                 ],

@@ -208,42 +208,34 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
       child: Column(
         children: [
           /// Profile Image
-          Stack(
-            children: [
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: AppColors.red,
-                  shape: BoxShape.circle,
-                  image: DecorationImage(
-                    image: imageUrl != null && imageUrl.isNotEmpty
-                        ? NetworkImage(imageUrl)
-                        : const AssetImage('assets/images/patient.png')
-                            as ImageProvider,
-                    fit: BoxFit.cover,
-                  ),
+          InkWell(
+            onTap: // Move image to fullViewScreen where use can view and zoom image
+                () {
+              if (imageUrl != null && imageUrl.isNotEmpty) {
+                context.push(
+                  AppRoutes.fullImageView,
+                  extra: {
+                    'imageUrl': imageUrl,
+                    'title': fullName.isNotEmpty ? fullName : 'User',
+                  },
+                );
+              }
+            },
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: AppColors.red,
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: imageUrl != null && imageUrl.isNotEmpty
+                      ? NetworkImage(imageUrl)
+                      : const AssetImage('assets/images/patient.png')
+                          as ImageProvider,
+                  fit: BoxFit.cover,
                 ),
               ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: AppColors.red,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: const Icon(
-                    Icons.camera_alt,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -535,15 +527,6 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
 
               // Navigate immediately while token refresh happens in background
               context.goNextScreen(AppRoutes.changePassword);
-            },
-          ),
-          const Divider(height: 1, indent: 56),
-          _menuItem(
-            icon: Icons.link,
-            iconColor: const Color(0xFF6B7280),
-            title: 'Linked Accounts',
-            onTap: () {
-              context.goNextScreen(AppRoutes.linkedAccounts);
             },
           ),
           const Divider(height: 1, indent: 56),

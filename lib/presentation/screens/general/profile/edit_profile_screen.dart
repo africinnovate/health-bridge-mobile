@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/presentation/providers/auth_provider.dart';
 import 'package:HealthBridge/presentation/providers/patient_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -20,6 +24,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+
+  File? _pickedImage;
+  bool _removePhoto = false;
+  final ImagePicker _imagePicker = ImagePicker();
 
   String? selectedGender;
   String? selectedBloodType;
@@ -101,6 +109,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             builder: (context, provider, child) {
                               final imageUrl =
                                   provider.patientProfileM?.image_url;
+                              ImageProvider imageProvider;
+                              if (_pickedImage != null) {
+                                imageProvider = FileImage(_pickedImage!);
+                              } else if (!_removePhoto &&
+                                  imageUrl != null &&
+                                  imageUrl.isNotEmpty) {
+                                imageProvider = NetworkImage(imageUrl);
+                              } else {
+                                imageProvider = const AssetImage(
+                                    'assets/images/patient.png');
+                              }
                               return Container(
                                 width: 120,
                                 height: 120,
@@ -108,12 +127,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   color: AppColors.red,
                                   shape: BoxShape.circle,
                                   image: DecorationImage(
-                                    image:
-                                        imageUrl != null && imageUrl.isNotEmpty
-                                            ? NetworkImage(imageUrl)
-                                            : const AssetImage(
-                                                    'assets/images/patient.png')
-                                                as ImageProvider,
+                                    image: imageProvider,
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -151,7 +165,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     Center(
                       child: TextButton(
                         onPressed: () {
-                          SnackBarUtils.showInfo(context, "Remove photo");
+                          setState(() {
+                            _pickedImage = null;
+                            _removePhoto = true;
+                          });
                         },
                         child: const Text(
                           'Remove Photo',
@@ -539,12 +556,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
 
     final provider = Provider.of<PatientProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     // Format date to ISO 8601 string (YYYY-MM-DD)
     String? dobString;
     if (selectedDate != null) {
       dobString =
           '${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}';
+    }
+
+    context.showLoadingDialog();
+
+    // Resolve image URL: upload new image, clear if removed, or keep existing
+    String? imageUrl = provider.patientProfileM?.image_url;
+    if (_pickedImage != null) {
+      final (uploadedUrl, uploadError) =
+          await authProvider.uploadImage(_pickedImage!.path);
+      if (uploadError != null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(uploadError)));
+        return;
+      }
+      imageUrl = uploadedUrl;
+    } else if (_removePhoto) {
+      imageUrl = null;
     }
 
     final error = await provider.updateProfile(
@@ -554,9 +590,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       gender: (selectedGender ?? "male").toLowerCase(),
       dob: dobString,
       address: _addressController.text.trim(),
-      // imageUrl will be updated separately when photo upload is implemented
+      imageUrl: imageUrl,
     );
 
+    context.hideLoadingDialog();
     if (error != null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -570,6 +607,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (!mounted) return;
     SnackBarUtils.showSuccess(context, "Profile updated successfully!");
     Navigator.pop(context);
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final XFile? picked =
+        await _imagePicker.pickImage(source: source, imageQuality: 80);
+    if (picked != null) {
+      setState(() {
+        _pickedImage = File(picked.path);
+        _removePhoto = false;
+      });
+    }
   }
 
   void _showPhotoOptions() {
@@ -588,8 +636,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               title: const Text('Take Photo'),
               onTap: () {
                 Navigator.pop(context);
-                SnackBarUtils.showInfo(context, "Camera opened");
-                // TODO: Implement camera photo upload
+                _pickImage(ImageSource.camera);
               },
             ),
             ListTile(
@@ -597,8 +644,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               title: const Text('Choose from Gallery'),
               onTap: () {
                 Navigator.pop(context);
-                SnackBarUtils.showInfo(context, "Gallery opened");
-                // TODO: Implement gallery photo upload
+                _pickImage(ImageSource.gallery);
               },
             ),
           ],

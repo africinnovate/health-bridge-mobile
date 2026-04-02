@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:HealthBridge/core/constants/app_colors.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:HealthBridge/core/constants/app_routes.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
@@ -8,7 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../core/utils/dialog.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/blood_request_provider.dart';
 
 class HospitalProfileScreen extends StatefulWidget {
   const HospitalProfileScreen({super.key});
@@ -18,6 +23,68 @@ class HospitalProfileScreen extends StatefulWidget {
 }
 
 class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
+  File? _pickedImage;
+  final ImagePicker _imagePicker = ImagePicker();
+
+  Future<void> _showPhotoOptions() async {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppColors.red),
+              title: const Text('Take Photo'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImage(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: AppColors.red),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickImage(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final XFile? picked =
+        await _imagePicker.pickImage(source: source, imageQuality: 80);
+    if (picked == null) return;
+
+    setState(() => _pickedImage = File(picked.path));
+
+    final profile = context.read<HospitalProvider>().hospitalProfile;
+    if (profile == null) return;
+
+    if (!mounted) return;
+    context.showLoadingDialog();
+
+    final (_, error) = await context
+        .read<HospitalProvider>()
+        .uploadHospitalImage(picked.path, profile.id);
+
+    if (!mounted) return;
+    context.hideLoadingDialog();
+
+    if (error != null) {
+      SnackBarUtils.showError(context, error);
+      setState(() => _pickedImage = null);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -88,32 +155,53 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                   children: [
                     Stack(
                       children: [
-                        Container(
-                          width: 140,
-                          height: 140,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            image: const DecorationImage(
-                              image: AssetImage('assets/images/patient.png'),
-                              fit: BoxFit.cover,
+                        GestureDetector(
+                          onTap: profile?.profileImage != null
+                              ? () => context.goNextScreenWithData(
+                                    AppRoutes.fullImageView,
+                                    extra: {
+                                      'imageUrl': profile!.profileImage!,
+                                      'title': profile.name,
+                                    },
+                                  )
+                              : null,
+                          child: Container(
+                            width: 140,
+                            height: 140,
+                            decoration: BoxDecoration(
+                              color: AppColors.red,
+                              shape: BoxShape.circle,
+                              image: DecorationImage(
+                                image: _pickedImage != null
+                                    ? FileImage(_pickedImage!) as ImageProvider
+                                    : profile?.profileImage != null
+                                        ? NetworkImage(profile!.profileImage!)
+                                        : const AssetImage(
+                                            'assets/images/patient.png'),
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
                         Positioned(
                           bottom: 5,
                           right: 5,
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: AppColors.red,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                            ),
-                            child: const Icon(
-                              Icons.local_hospital,
-                              color: Colors.white,
-                              size: 18,
+                          child: GestureDetector(
+                            onTap: _showPhotoOptions,
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: AppColors.red,
+                                shape: BoxShape.circle,
+                                border:
+                                    Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: const Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                             ),
                           ),
                         ),
@@ -358,6 +446,13 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                       Icons.chevron_right,
                       () => SnackBarUtils.showInfo(context, "Privacy Policy"),
                     ),
+                    const Divider(height: 1),
+                    _menuItem(
+                      Icons.delete,
+                      'Delete Account',
+                      Icons.chevron_right,
+                      () => showDeleteAccountDialog(context),
+                    ),
                   ],
                 ),
               ),
@@ -434,6 +529,11 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
         SnackBarUtils.showError(context, error);
         authProvider.setIsLoadingToFalse();
         return;
+      }
+
+      // Clear cached blood request data so it doesn't leak to the next session
+      if (mounted) {
+        context.read<BloodRequestProvider>().clearRequests();
       }
 
       // Success - navigate to login screen

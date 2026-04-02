@@ -1,13 +1,16 @@
 import 'package:HealthBridge/core/constants/app_constants.dart';
 import 'package:HealthBridge/data/dataSource/remoteApi/auth_api.dart';
 import 'package:HealthBridge/data/dataSource/remoteApi/hospital_api.dart';
+import 'package:HealthBridge/data/dataSource/remoteApi/notification_api.dart';
 import 'package:HealthBridge/data/dataSource/remoteApi/patient_api.dart';
 import 'package:HealthBridge/data/dataSource/remoteApi/specialist_api.dart';
 import 'package:HealthBridge/data/repositories/hospital_repository.dart';
+import 'package:HealthBridge/data/repositories/notification_repository.dart';
 import 'package:HealthBridge/data/repositories/specialist_repository.dart';
 import 'package:HealthBridge/presentation/providers/appointment_provider.dart';
 import 'package:HealthBridge/presentation/providers/blood_request_provider.dart';
 import 'package:HealthBridge/presentation/providers/hospital_provider.dart';
+import 'package:HealthBridge/presentation/providers/notification_provider.dart';
 import 'package:HealthBridge/presentation/providers/patient_provider.dart';
 import 'package:HealthBridge/presentation/providers/specialist_provider.dart';
 
@@ -32,6 +35,7 @@ class Injection {
   static late final SpecialistApi _specialistApi;
   static late final HospitalApi _hospitalApi;
   static late final AppointmentApi _appointmentApi;
+  static late final NotificationApi _notificationApi;
 
   // =============  Repositories
   static late final AuthRepository _authRepository;
@@ -39,6 +43,7 @@ class Injection {
   static late final SpecialistRepository _specialistRepository;
   static late final HospitalRepository _hospitalRepository;
   static late final AppointmentRepository _appointmentRepository;
+  static late final NotificationRepository _notificationRepository;
 
   // =============  Providers
   static late final AuthProvider authProvider;
@@ -47,6 +52,7 @@ class Injection {
   static late final HospitalProvider hospitalProvider;
   static late final AppointmentProvider appointmentProvider;
   static late final BloodRequestProvider bloodRequestProvider;
+  static late final NotificationProvider notificationProvider;
 
   /// initialise all dependencies
   static Future<void> init() async {
@@ -61,6 +67,7 @@ class Injection {
     _specialistApi = SpecialistApi(apiClient: apiClient);
     _hospitalApi = HospitalApi(apiClient: apiClient);
     _appointmentApi = AppointmentApi(apiClient: apiClient);
+    _notificationApi = NotificationApi(apiClient: apiClient);
 
     // =============  Repositories
     _authRepository = AuthRepository(
@@ -72,6 +79,8 @@ class Injection {
     _hospitalRepository = HospitalRepository(hospitalApi: _hospitalApi);
     _appointmentRepository =
         AppointmentRepository(appointmentApi: _appointmentApi);
+    _notificationRepository =
+        NotificationRepository(notificationApi: _notificationApi);
 
     // =============  Providers
     authProvider = AuthProvider(authRepository: _authRepository);
@@ -87,6 +96,9 @@ class Injection {
     );
     bloodRequestProvider = BloodRequestProvider(
       hospitalRepository: _hospitalRepository,
+    );
+    notificationProvider = NotificationProvider(
+      notificationRepository: _notificationRepository,
     );
 
     // Initialize auth provider (will also load credentials if already logged in)
