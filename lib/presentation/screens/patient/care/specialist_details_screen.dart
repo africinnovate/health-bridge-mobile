@@ -189,7 +189,10 @@ class _SpecialistDetailsScreenState extends State<SpecialistDetailsScreen> {
             child: SafeArea(
               child: CustomButton(
                 onPressed: () {
-                  context.push(AppRoutes.pickDateTime);
+                  context.push(
+                  AppRoutes.pickDateTime,
+                  extra: {'specialist': widget.specialist},
+                );
                 },
                 text: 'Book Appointment',
               ),

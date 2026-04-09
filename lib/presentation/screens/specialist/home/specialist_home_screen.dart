@@ -117,7 +117,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 12),
                               child: _requestCard(
-                                name: apt.userId,
+                                name: apt.userName != 'Unknown' ? apt.userName : (apt.userId ?? 'Unknown'),
                                 info:
                                     '${isVideo ? 'Video Call' : 'In Person'} • $date, $time',
                                 onTap: () => context.goNextScreenWithData(

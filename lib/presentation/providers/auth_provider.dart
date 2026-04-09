@@ -74,8 +74,13 @@ class AuthProvider extends ChangeNotifier {
   patient - ronokinno+03@gmail.com
   specialist - ronokinno+04@gmail.com,
 
-africinnovate@gmail.com
-password
+Hospital
+  africinnovate@gmail.com
+  password
+
+Specialist
+  gdgeket@gmail.com
+  password
 
   ResponseStatusM {
    status_code: 201,

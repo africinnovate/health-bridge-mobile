@@ -3,7 +3,9 @@ import 'package:HealthBridge/core/constants/app_routes.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/dialog.dart';
 import 'package:HealthBridge/data/models/appointment/appointment_model.dart';
+import 'package:HealthBridge/data/models/blood_request/blood_request_model.dart';
 import 'package:HealthBridge/presentation/providers/appointment_provider.dart';
+import 'package:HealthBridge/presentation/providers/blood_request_provider.dart';
 import 'package:HealthBridge/presentation/providers/hospital_provider.dart';
 import 'package:HealthBridge/presentation/providers/patient_provider.dart';
 import 'package:HealthBridge/presentation/widgets/cancel_button.dart';
@@ -31,20 +33,23 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
     final patientProvider = context.read<PatientProvider>();
     final hospitalProvider = context.read<HospitalProvider>();
     final appointmentProvider = context.read<AppointmentProvider>();
+    final bloodRequestProvider = context.read<BloodRequestProvider>();
 
     // Load donor profile to get donor ID
     await patientProvider.getPatientOrDonorProfile();
     final donorId = patientProvider.patientProfileM?.id;
 
     if (donorId != null) {
-      // Load stats and history in parallel with upcoming appointment
       await Future.wait([
         hospitalProvider.loadDonorData(donorId),
         appointmentProvider.getAppointments('donor', timeline: 'upcoming'),
+        bloodRequestProvider.fetchBloodRequests(),
       ]);
     } else {
-      // Still load appointments if donor ID unavailable
-      await appointmentProvider.getAppointments('donor', timeline: 'upcoming');
+      await Future.wait([
+        appointmentProvider.getAppointments('donor', timeline: 'upcoming'),
+        bloodRequestProvider.fetchBloodRequests(),
+      ]);
     }
   }
 
@@ -91,11 +96,48 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
                     /// Nearby Blood Requests
                     _sectionTitle('Nearby Blood Requests'),
                     const SizedBox(height: 12),
-                    _buildBloodRequestCard(isUrgent: true),
-                    const SizedBox(height: 12),
-                    _buildBloodRequestCard(isUrgent: false),
-                    const SizedBox(height: 12),
-                    _buildBloodRequestCard(isUrgent: false),
+                    Consumer<BloodRequestProvider>(
+                      builder: (context, bloodRequestProvider, _) {
+                        if (bloodRequestProvider.isLoading) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        final requests = bloodRequestProvider.allRequests
+                            .where((r) =>
+                                r.requestStatus?.toLowerCase() != 'cancelled' &&
+                                r.requestStatus?.toLowerCase() != 'completed')
+                            .take(3)
+                            .toList();
+                        if (requests.isEmpty) {
+                          return Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Text(
+                              'No nearby blood requests at the moment.',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                          );
+                        }
+                        return Column(
+                          children: requests.asMap().entries.map((entry) {
+                            final i = entry.key;
+                            final r = entry.value;
+                            return Column(
+                              children: [
+                                _buildBloodRequestCard(request: r),
+                                if (i < requests.length - 1)
+                                  const SizedBox(height: 12),
+                              ],
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 24),
 
                     /// Your Impact
@@ -593,7 +635,7 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            next.specialistId.isNotEmpty
+                            (next.specialistId?.isNotEmpty ?? false)
                                 ? 'Specialist Appointment'
                                 : 'Blood Donation Appointment',
                             style: const TextStyle(
@@ -712,7 +754,11 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
     );
   }
 
-  Widget _buildBloodRequestCard({required bool isUrgent}) {
+  Widget _buildBloodRequestCard({required BloodRequestModel request}) {
+    final isUrgent = request.urgency?.toLowerCase() == 'urgent';
+    final bloodType = request.bloodType ?? 'Unknown';
+    final units = request.units;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -753,21 +799,23 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
                     color: AppColors.red, size: 22),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Nearby Hospital',
-                      style: TextStyle(
+                      'Blood Type: $bloodType',
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'Tap "Donate Now" to view details',
-                      style: TextStyle(
+                      request.requestReason ?? 'Tap "Donate Now" to view details',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFF6B7280),
                       ),
@@ -788,12 +836,12 @@ class _DonorHomeScreenState extends State<DonorHomeScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
-                  children: const [
-                    Icon(Icons.water_drop, size: 14, color: AppColors.red),
-                    SizedBox(width: 4),
+                  children: [
+                    const Icon(Icons.water_drop, size: 14, color: AppColors.red),
+                    const SizedBox(width: 4),
                     Text(
-                      '3 units',
-                      style: TextStyle(
+                      '$units unit${units == 1 ? '' : 's'}',
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),

@@ -2,6 +2,7 @@ import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/constants/app_routes.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/core/utils/url_utils.dart';
 import 'package:HealthBridge/presentation/providers/auth_provider.dart';
 import 'package:HealthBridge/presentation/providers/patient_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
@@ -209,17 +210,14 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
         children: [
           /// Profile Image
           InkWell(
-            onTap: // Move image to fullViewScreen where use can view and zoom image
-                () {
-              if (imageUrl != null && imageUrl.isNotEmpty) {
-                context.push(
-                  AppRoutes.fullImageView,
-                  extra: {
-                    'imageUrl': imageUrl,
-                    'title': fullName.isNotEmpty ? fullName : 'User',
-                  },
-                );
-              }
+            onTap: () {
+              context.push(
+                AppRoutes.fullImageView,
+                extra: {
+                  'imageUrl': imageUrl ?? '',
+                  'title': fullName.isNotEmpty ? fullName : 'User',
+                },
+              );
             },
             child: Container(
               width: 100,
@@ -317,6 +315,8 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
     final gender = profile?.gender ?? 'N/A';
     final bloodType = profile?.bloodType ?? 'N/A';
     final address = profile?.address ?? 'N/A';
+    final city = profile?.city ?? 'N/A';
+    final state = profile?.state ?? 'N/A';
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -337,6 +337,10 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
           ],
           const Divider(height: 24),
           _infoRow('Address', address),
+          const Divider(height: 24),
+          _infoRow('City', city),
+          const Divider(height: 24),
+          _infoRow('State', state),
         ],
       ),
     );
@@ -485,15 +489,15 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
             },
           ),
           const Divider(height: 1, indent: 56),
-          _menuItem(
-            icon: Icons.quiz_outlined,
-            iconColor: AppColors.green,
-            title: 'FAQs',
-            onTap: () {
-              context.goNextScreen(AppRoutes.faqs);
-            },
-          ),
-          const Divider(height: 1, indent: 56),
+          // _menuItem(
+          //   icon: Icons.quiz_outlined,
+          //   iconColor: AppColors.green,
+          //   title: 'FAQs',
+          //   onTap: () {
+          //     context.goNextScreen(AppRoutes.faqs);
+          //   },
+          // ),
+          // const Divider(height: 1, indent: 56),
           _menuItem(
             icon: Icons.chat_bubble_outline,
             iconColor: AppColors.green,
@@ -534,14 +538,14 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
             icon: Icons.description_outlined,
             iconColor: const Color(0xFF6B7280),
             title: 'Terms & Conditions',
-            onTap: () {},
+            onTap: () => UrlUtils.openTerms(context),
           ),
           const Divider(height: 1, indent: 56),
           _menuItem(
             icon: Icons.shield_outlined,
             iconColor: const Color(0xFF6B7280),
             title: 'Privacy Policy',
-            onTap: () {},
+            onTap: () => UrlUtils.openPrivacyPolicy(context),
           ),
         ],
       ),

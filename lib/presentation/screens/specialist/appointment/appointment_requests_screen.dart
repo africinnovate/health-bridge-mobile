@@ -127,7 +127,9 @@ class AppointmentRequestCard extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Text(
-            appointment.userId, // Display user ID as fallback (patient name not in model)
+            appointment.userName.isNotEmpty && appointment.userName != 'Unknown'
+                ? appointment.userName
+                : appointment.userId ?? 'Unknown',
             style: const TextStyle(fontWeight: FontWeight.w600),
           ),
         ),

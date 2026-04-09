@@ -74,10 +74,15 @@ class _DonorAppointmentsScreenState extends State<DonorAppointmentsScreen> {
 
                 // Separate appointments by status
                 final upcomingAppointments = appointments
-                    .where((apt) => apt.status == 'confirmed' || apt.status == 'rescheduled')
+                    .where((apt) =>
+                        apt.status == 'created' ||
+                        apt.status == 'confirmed' ||
+                        apt.status == 'rescheduled')
                     .toList();
                 final pastAppointments = appointments
-                    .where((apt) => apt.status == 'completed' || apt.status == 'cancelled')
+                    .where((apt) =>
+                        apt.status == 'completed' ||
+                        apt.status == 'cancelled')
                     .toList();
 
                 return SingleChildScrollView(
@@ -199,7 +204,9 @@ class _DonorAppointmentsScreenState extends State<DonorAppointmentsScreen> {
 
     // Determine status display
     String statusDisplay = appointment.status;
-    if (appointment.status == 'confirmed' || appointment.status == 'rescheduled') {
+    if (appointment.status == 'created') {
+      statusDisplay = 'Pending';
+    } else if (appointment.status == 'confirmed' || appointment.status == 'rescheduled') {
       statusDisplay = 'Upcoming';
     } else if (appointment.status == 'completed') {
       statusDisplay = 'Completed';
@@ -236,12 +243,25 @@ class _DonorAppointmentsScreenState extends State<DonorAppointmentsScreen> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(
-                    'assets/images/patient.png',
-                    width: 50,
-                    height: 50,
-                    fit: BoxFit.cover,
-                  ),
+                  child: appointment.specialistImageUrl != null
+                      ? Image.network(
+                          appointment.specialistImageUrl!,
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Image.asset(
+                            'assets/images/patient.png',
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Image.asset(
+                          'assets/images/patient.png',
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                        ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -249,8 +269,8 @@ class _DonorAppointmentsScreenState extends State<DonorAppointmentsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        appointment.specialistId.isNotEmpty
-                            ? 'Specialist Appointment'
+                        (appointment.specialistId?.isNotEmpty ?? false)
+                            ? 'Dr. ${appointment.specialistName}'
                             : 'Blood Donation Appointment',
                         style: const TextStyle(
                           fontSize: 14,
@@ -259,7 +279,9 @@ class _DonorAppointmentsScreenState extends State<DonorAppointmentsScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'ID: ${appointment.id.substring(0, 8)}...',
+                        appointment.appointmentType == 'patient'
+                            ? 'Specialist Consultation'
+                            : 'Blood Donation',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Color(0xFF6B7280),
@@ -294,7 +316,10 @@ class _DonorAppointmentsScreenState extends State<DonorAppointmentsScreen> {
                       ),
                     ],
                   ),
-                  if (showCancelButton) ...[
+                  if (showCancelButton &&
+                      (appointment.status == 'created' ||
+                       appointment.status == 'confirmed' ||
+                       appointment.status == 'rescheduled')) ...[
                     const SizedBox(height: 16),
                     CancelButton(
                       text: 'Cancel',
@@ -306,8 +331,21 @@ class _DonorAppointmentsScreenState extends State<DonorAppointmentsScreen> {
                               "Are you sure you want to cancel this appointment? You won't be able to undo this action.",
                           cancelText: "Keep Appointment",
                           confirmText: "Yes, Cancel Appointment",
-                          onConfirm: () {
-                            SnackBarUtils.showInfo(context, "in progress");
+                          onConfirm: () async {
+                            final error = await context
+                                .read<AppointmentProvider>()
+                                .cancelAppointment(
+                                  appointment.id,
+                                  'Cancelled by user',
+                                  appointmentType: widget.appointmentType,
+                                );
+                            if (!context.mounted) return;
+                            if (error != null) {
+                              SnackBarUtils.showError(context, error);
+                            } else {
+                              SnackBarUtils.showSuccess(
+                                  context, 'Appointment cancelled');
+                            }
                           },
                         );
                       },

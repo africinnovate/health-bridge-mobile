@@ -1,6 +1,6 @@
 class AppConstants {
   // App Info
-  static const String appName = 'HealthBridge';
+  static const String appName = 'RubiMedik';
   // static const String appTagline = 'Need it fast? Just Zap it!';
 
   // Local API Configuration - Android emulator uses 10.0.2.2 instead of localhost
@@ -90,6 +90,9 @@ class AppConstants {
 
   /// /api/appointments/confirm/{appointment_id}
   static const String appointmentConfirmEP = '/api/appointments/confirm';
+
+  /// /api/appointments/create
+  static const String createAppointmentEP = '/api/appointments/create';
 
   /// /api/hospitals/create
   static const String createHospitalEP = "/api/hospitals/create";

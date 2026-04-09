@@ -108,7 +108,7 @@ class _DonationAppointmentsScreenState
                             _buildRequestCard(
                               appointment.appointmentType.substring(0, 1).toUpperCase() +
                                   appointment.appointmentType.substring(1),
-                              'Donor - ${appointment.userId.substring(0, 8)}',
+                              'Donor - ${appointment.userId?.substring(0, 8) ?? 'N/A'}',
                               formattedTime,
                               appointment.id,
                               _getDisplayStatus(appointment.status ?? ''),

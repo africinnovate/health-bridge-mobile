@@ -60,7 +60,9 @@ class _DonorAppointmentDetailScreenState
 
     // Determine status display
     String statusDisplay = appointment.status;
-    if (appointment.status == 'confirmed' ||
+    if (appointment.status == 'created') {
+      statusDisplay = 'Pending';
+    } else if (appointment.status == 'confirmed' ||
         appointment.status == 'rescheduled') {
       statusDisplay = 'Confirmed';
     } else if (appointment.status == 'completed') {
@@ -69,11 +71,12 @@ class _DonorAppointmentDetailScreenState
       statusDisplay = 'Cancelled';
     }
 
-    final isUpcoming = appointment.status == 'confirmed' ||
+    final isUpcoming = appointment.status == 'created' ||
+        appointment.status == 'confirmed' ||
         appointment.status == 'rescheduled';
-    final appointmentType = appointment.specialistId.isNotEmpty
-        ? 'Specialist Appointment'
-        : 'Blood Donation';
+    final isSpecialist = appointment.specialistId?.isNotEmpty ?? false;
+    final appointmentType =
+        isSpecialist ? 'Specialist Appointment' : 'Blood Donation';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundGray,
@@ -118,52 +121,48 @@ class _DonorAppointmentDetailScreenState
             ),
             const SizedBox(height: 20),
 
-            /// Hospital Card
+            /// Specialist / Hospital Card
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          appointment.hospitalId.isNotEmpty
-                              ? appointment.hospitalId
-                              : 'Hospital',
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundImage: isSpecialist &&
+                            appointment.specialistImageUrl != null
+                        ? NetworkImage(appointment.specialistImageUrl!)
+                            as ImageProvider
+                        : const AssetImage('assets/images/patient.png'),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isSpecialist
+                              ? 'Dr. ${appointment.specialistName}'
+                              : (appointment.hospitalName ?? 'Hospital'),
                           style: const TextStyle(
-                            fontSize: 16,
+                            fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
-                      Icon(
-                        Icons.open_in_new,
-                        size: 20,
-                        color: AppColors.textGray,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'ID: ${appointment.hospitalId.substring(0, 8)}...',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF6B7280),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Contact hospital for location and operating hours',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.green,
+                        const SizedBox(height: 4),
+                        Text(
+                          isSpecialist
+                              ? (appointment.specialistPhone ?? '')
+                              : (appointment.hospitalAddress ?? ''),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -294,7 +293,7 @@ class _DonorAppointmentDetailScreenState
               )
             else
 
-              /// Appointment Notes (for upcoming and missed)
+              /// Appointment Notes
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -306,66 +305,30 @@ class _DonorAppointmentDetailScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Appointment Notes',
+                      'Notes',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    if (appointment.status == "missed") ...[
-                      const Text(
-                        'You missed this appointment.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF6B7280),
-                          height: 1.6,
-                        ),
+                    Text(
+                      appointment.notes?.isNotEmpty == true
+                          ? appointment.notes!
+                          : 'No notes added.',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF6B7280),
+                        height: 1.6,
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Please reschedule to complete your donation.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF6B7280),
-                          height: 1.6,
-                        ),
-                      ),
-                    ] else ...[
-                      const Text(
-                        'Please arrive 10 minutes early.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF6B7280),
-                          height: 1.6,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Bring a valid ID card.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF6B7280),
-                          height: 1.6,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Follow any preparation instructions sent to you.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF6B7280),
-                          height: 1.6,
-                        ),
-                      ),
-                    ],
+                    ),
                   ],
                 ),
               ),
             const SizedBox(height: 24),
 
             /// Reminders (only for upcoming)
-            if (appointment.status == "upcoming") ...[
+            if (isUpcoming) ...[
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
@@ -458,26 +421,23 @@ class _DonorAppointmentDetailScreenState
             const SizedBox(height: 24),
 
             /// Contact Information
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
+            if (isSpecialist
+                ? appointment.specialistPhone != null
+                : appointment.hospitalPhone != null) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: _contactRow(
+                  label: isSpecialist ? 'Specialist Phone:' : 'Hospital Phone:',
+                  value: isSpecialist
+                      ? appointment.specialistPhone!
+                      : appointment.hospitalPhone!,
+                ),
               ),
-              child: Column(
-                children: [
-                  _contactRow(
-                    label: 'Emergency Contact:',
-                    value: '+234 802 347 6400',
-                  ),
-                  const SizedBox(height: 12),
-                  _contactRow(
-                    label: 'Hospital Hotline:',
-                    value: '+234 700 445 2211',
-                  ),
-                ],
-              ),
-            ),
+            ],
             const SizedBox(height: 40),
           ],
         ),

@@ -132,6 +132,28 @@ class AppointmentProvider extends ChangeNotifier {
     notifyListeners(); // Notify listeners
   }
 
+  /// Create a new appointment (patient or donor)
+  Future<String?> createAppointment({
+    required String appointmentType,
+    required DateTime scheduledTime,
+    String? specialistId,
+    String? bloodRequestId,
+    String? notes,
+  }) async {
+    final res = await getResponse(appointmentRepository.createAppointment(
+      appointmentType: appointmentType,
+      scheduledTime: scheduledTime,
+      specialistId: specialistId,
+      bloodRequestId: bloodRequestId,
+      notes: notes,
+    ));
+
+    if (ResponseUtils.isSuccessful(res)) {
+      return null; // success
+    }
+    return res.message ?? 'Failed to create appointment';
+  }
+
   /// Reschedule an appointment to a new time
   Future<String?> rescheduleAppointment(
     String appointmentId,

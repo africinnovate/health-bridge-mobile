@@ -5,7 +5,7 @@ class BloodRequestModel {
   final String? recipientId;
   final String? bloodType;
   final int units;
-  final String? urgency;
+  final String? urgency; // "standard" and "urgent"
   final String? requestReason;
   final String refId;
   final String? requestStatus;
@@ -43,7 +43,8 @@ class BloodRequestModel {
 
   factory BloodRequestModel.fromJson(Map<String, dynamic> json) {
     // Extract blood_request object if it exists (wrapped response structure)
-    final bloodRequestData = json['blood_request'] as Map<String, dynamic>? ?? json;
+    final bloodRequestData =
+        json['blood_request'] as Map<String, dynamic>? ?? json;
 
     return BloodRequestModel(
       id: bloodRequestData['id'] as String? ?? '',
@@ -68,7 +69,8 @@ class BloodRequestModel {
           : null,
       note: bloodRequestData['note'] as String?,
       createdAt: bloodRequestData['created_at'] != null
-          ? DateTime.tryParse(bloodRequestData['created_at'] as String) ?? DateTime.now()
+          ? DateTime.tryParse(bloodRequestData['created_at'] as String) ??
+              DateTime.now()
           : DateTime.now(),
       cancelledAt: bloodRequestData['cancelled_at'] != null
           ? DateTime.tryParse(bloodRequestData['cancelled_at'] as String)

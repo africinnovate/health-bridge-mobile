@@ -54,7 +54,7 @@ class AppointmentRescheduledScreen extends StatelessWidget {
       debugPrint('Error formatting new date: $e');
     }
 
-    final appointmentType = oldAppointment!.specialistId.isNotEmpty
+    final appointmentType = (oldAppointment!.specialistId?.isNotEmpty ?? false)
         ? 'Specialist Appointment'
         : 'Blood Donation';
 
@@ -117,7 +117,7 @@ class AppointmentRescheduledScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _detailRow('Hospital:', oldAppointment!.hospitalId),
+                  _detailRow('Hospital:', oldAppointment!.hospitalName ?? oldAppointment!.hospitalId ?? 'N/A'),
                   const SizedBox(height: 12),
                   _detailRow('Service:', appointmentType),
                 ],

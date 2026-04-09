@@ -1,16 +1,20 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
+import 'package:HealthBridge/data/models/appointment/appointment_model.dart';
+import 'package:HealthBridge/presentation/providers/appointment_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
-import 'package:HealthBridge/presentation/widgets/thank_you_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 import '../../../../core/utils/dialog.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 
 class BloodRequestBookingScreen extends StatefulWidget {
-  const BloodRequestBookingScreen({super.key});
+  final AppointmentModel? appointment;
+
+  const BloodRequestBookingScreen({super.key, this.appointment});
 
   @override
   State<BloodRequestBookingScreen> createState() =>
@@ -22,20 +26,15 @@ class _BloodRequestBookingScreenState extends State<BloodRequestBookingScreen> {
   DateTime? _selectedDay;
   String? _selectedTime;
 
-  final List<String> _timeSlots = [
-    '9:00 AM',
-    '9:30 AM',
-    '10:00 AM',
-    '10:30 AM',
-    '11:00 AM',
-    '11:30 AM',
-    '12:00 PM',
-    '12:30 PM',
-    '1:00 PM',
-    '1:30 PM',
-    '2:00 PM',
-    '2:30 PM',
-  ];
+  // 30-min slots from 8:00 AM to 5:00 PM
+  final List<String> _timeSlots = List.generate(18, (i) {
+    final totalMinutes = 8 * 60 + i * 30;
+    final h = totalMinutes ~/ 60;
+    final m = totalMinutes % 60;
+    final period = h < 12 ? 'AM' : 'PM';
+    final displayH = h == 0 ? 12 : (h > 12 ? h - 12 : h);
+    return '${displayH.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')} $period';
+  });
 
   @override
   void initState() {
@@ -264,9 +263,23 @@ class _BloodRequestBookingScreenState extends State<BloodRequestBookingScreen> {
                     ),
                     child: Column(
                       children: [
-                        _summaryRow('Hospital:', 'Emmanuel General Hospital'),
+                        if (widget.appointment?.specialistId?.isNotEmpty == true)
+                          _summaryRow(
+                            'Specialist:',
+                            'Dr. ${widget.appointment!.specialistName}',
+                          )
+                        else if (widget.appointment?.hospitalName != null)
+                          _summaryRow(
+                            'Hospital:',
+                            widget.appointment!.hospitalName!,
+                          ),
                         const SizedBox(height: 12),
-                        _summaryRow('Service:', 'Blood Donation'),
+                        _summaryRow(
+                          'Type:',
+                          widget.appointment?.appointmentType == 'patient'
+                              ? 'Specialist Consultation'
+                              : 'Blood Donation',
+                        ),
                         const SizedBox(height: 12),
                         _summaryRow(
                           'Date:',
@@ -302,27 +315,60 @@ class _BloodRequestBookingScreenState extends State<BloodRequestBookingScreen> {
               ],
             ),
             child: CustomButton(
-              onPressed: () {
-                if (_selectedDay != null && _selectedTime != null) {
-                  showThankYouDialog(context,
-                      title: "Request Submitted",
-                      message:
-                          "Your approval request has been sent successfully. "
-                          "We'll notify you as soon as it's reviewed.",
-                      onContinue: () {
-                    // Submit logic here
-                    // SnackBarUtils.showInfo(context, "on it");
-                    context.goBack();
-                  }, buttonText: "Done");
-                }
-              },
-              text: 'Submit Request',
+              onPressed: _submit,
+              text: 'Reschedule Appointment',
               shouldProceed: _selectedDay != null && _selectedTime != null,
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _submit() async {
+    if (_selectedDay == null || _selectedTime == null) return;
+
+    // Parse selected time "HH:mm AM/PM"
+    final timeParts = _selectedTime!.split(' ');
+    final hmParts = timeParts[0].split(':');
+    int hour = int.parse(hmParts[0]);
+    final int minute = int.parse(hmParts[1]);
+    if (timeParts[1] == 'PM' && hour != 12) hour += 12;
+    if (timeParts[1] == 'AM' && hour == 12) hour = 0;
+
+    final newTime = DateTime.utc(
+      _selectedDay!.year,
+      _selectedDay!.month,
+      _selectedDay!.day,
+      hour,
+      minute,
+    );
+
+    context.showLoadingDialog();
+
+    final error = await context.read<AppointmentProvider>().rescheduleAppointment(
+          widget.appointment!.id,
+          newTime,
+          appointmentType: widget.appointment!.appointmentType,
+        );
+
+    if (!mounted) return;
+    context.hideLoadingDialog();
+
+    if (error == null) {
+      showThankYouDialog(
+        context,
+        title: 'Appointment Rescheduled',
+        message: 'Your appointment has been rescheduled successfully.',
+        buttonText: 'Done',
+        onContinue: () {
+          context.goBack();
+          context.goBack();
+        },
+      );
+    } else {
+      SnackBarUtils.showError(context, error);
+    }
   }
 
   Widget _summaryRow(String label, String value) {

@@ -78,6 +78,9 @@ class _SpecialistRootScreenState extends State<SpecialistRootScreen> {
       }
     } else {
       // Profile loaded successfully, also load specialties for display
+      if (specialistApi.specialistProfileM!.firstName.isEmpty) {
+        context.goNextScreen(AppRoutes.editPersonalSpecialist);
+      }
       await specialistApi.getSpecialties();
     }
   }

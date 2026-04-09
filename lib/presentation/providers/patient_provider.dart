@@ -94,6 +94,8 @@ class PatientProvider extends ChangeNotifier {
   Future<String?> updateProfile({
     String? imageUrl,
     String? address,
+    String? city,
+    String? state,
     String? dob,
     String? firstName,
     String? lastName,
@@ -104,6 +106,8 @@ class PatientProvider extends ChangeNotifier {
       patientRepository.updateProfile(
         imageUrl: imageUrl,
         address: address,
+        city: city,
+        state: state,
         dob: dob,
         firstName: firstName,
         lastName: lastName,

@@ -182,8 +182,12 @@ class _DonorListScreenState extends State<DonorListScreen> {
           ),
 
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
+            child: RefreshIndicator(
+              onRefresh: _loadDonors,
+              color: AppColors.red,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 16),
@@ -364,6 +368,7 @@ class _DonorListScreenState extends State<DonorListScreen> {
                 ],
               ),
             ),
+          ),
           ),
         ],
       ),

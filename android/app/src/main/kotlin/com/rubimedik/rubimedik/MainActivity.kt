@@ -1,4 +1,4 @@
-package com.healthbridge.healthbridge
+package com.rubimedik.rubimedik
 
 import io.flutter.embedding.android.FlutterActivity
 

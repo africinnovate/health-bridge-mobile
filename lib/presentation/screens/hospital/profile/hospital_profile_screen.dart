@@ -12,6 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/utils/dialog.dart';
+import '../../../../core/utils/url_utils.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/blood_request_provider.dart';
 
@@ -436,15 +437,14 @@ class _HospitalProfileScreenState extends State<HospitalProfileScreen> {
                       Icons.description_outlined,
                       'Terms & Conditions',
                       Icons.chevron_right,
-                      () =>
-                          SnackBarUtils.showInfo(context, "Terms & Conditions"),
+                      () => UrlUtils.openTerms(context),
                     ),
                     const Divider(height: 1),
                     _menuItem(
                       Icons.shield_outlined,
                       'Privacy Policy',
                       Icons.chevron_right,
-                      () => SnackBarUtils.showInfo(context, "Privacy Policy"),
+                      () => UrlUtils.openPrivacyPolicy(context),
                     ),
                     const Divider(height: 1),
                     _menuItem(

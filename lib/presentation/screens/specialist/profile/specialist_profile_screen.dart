@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/utils/dialog.dart';
+import '../../../../core/utils/url_utils.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/specialist_provider.dart';
 
@@ -316,9 +317,11 @@ class SpecialistProfileScreen extends StatelessWidget {
               context.goNextScreen(AppRoutes.changePassword);
             },
           ),
-          _accountTile(Icons.description, 'Terms & Conditions'),
+          _accountTile(Icons.description, 'Terms & Conditions',
+              onTap: () => UrlUtils.openTerms(context)),
           _accountTile(Icons.language, 'Language', trailing: 'English'),
-          _accountTile(Icons.privacy_tip, 'Privacy Policy'),
+          _accountTile(Icons.privacy_tip, 'Privacy Policy',
+              onTap: () => UrlUtils.openPrivacyPolicy(context)),
           _accountTile(Icons.delete, 'Delete Account',
               onTap: () => showDeleteAccountDialog(context)),
         ],

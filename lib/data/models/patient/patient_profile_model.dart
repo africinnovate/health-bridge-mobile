@@ -28,6 +28,8 @@ class PatientProfileModel implements JsonSerializable {
   final String? medications;
   final String? primary_physician;
   final String? existing_conditions;
+  final String? city;
+  final String? state;
 
   PatientProfileModel({
     required this.id,
@@ -51,6 +53,8 @@ class PatientProfileModel implements JsonSerializable {
     this.medications,
     this.primary_physician,
     this.existing_conditions,
+    this.city,
+    this.state,
   });
 
   factory PatientProfileModel.fromJson(Map<String, dynamic> json) {
@@ -80,6 +84,8 @@ class PatientProfileModel implements JsonSerializable {
           ? json['primary_physician']['id']
           : json['primary_physician'],
       existing_conditions: json['existing_conditions'],
+      city: json['city'],
+      state: json['state'],
     );
   }
 
@@ -109,6 +115,8 @@ class PatientProfileModel implements JsonSerializable {
       'medications': medications,
       'primary_physician': primary_physician,
       'existing_conditions': existing_conditions,
+      'city': city,
+      'state': state,
     };
   }
 

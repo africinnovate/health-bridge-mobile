@@ -1,8 +1,8 @@
 import 'package:HealthBridge/core/constants/app_constants.dart';
 import 'package:HealthBridge/core/di/injection.dart';
 import 'package:HealthBridge/core/utils/response_utils.dart';
+import 'package:flutter/cupertino.dart';
 import '../../../core/network/api_client.dart';
-import '../../models/appointment/appointment_model.dart';
 import '../../models/response_status_m.dart';
 
 class AppointmentApi {
@@ -26,7 +26,8 @@ class AppointmentApi {
       query: query,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "GET - ${AppConstants.appointmentsEP} \nquery: $query");
   }
 
   /// Reschedule an appointment with a new scheduled time
@@ -38,14 +39,16 @@ class AppointmentApi {
     final data = {
       "scheduled_time": newScheduledTime.toIso8601String(),
     };
+    debugPrint("Reschedule Response: I reach here");
 
     final response = await apiClient.put(
       '${AppConstants.appointmentRescheduleEP}/$appointmentId',
       headers: header,
       data: data,
     );
-
-    return ResponseUtils.getApiResponse(response);
+    debugPrint("Reschedule Response: ${response.statusCode}}");
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "PUT - ${AppConstants.appointmentRescheduleEP} ");
   }
 
   /// Confirm an appointment (specialist action)
@@ -57,7 +60,35 @@ class AppointmentApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "PUT - ${AppConstants.appointmentConfirmEP}");
+  }
+
+  /// Create a new appointment (donor or patient initiates)
+  Future<ResponseStatusM> createAppointment({
+    required String appointmentType,
+    required DateTime scheduledTime,
+    String? specialistId,
+    String? bloodRequestId,
+    String? notes,
+  }) async {
+    var header = await Injection.tokenHeaders();
+    final data = <String, dynamic>{
+      'appointment_type': appointmentType,
+      'scheduled_time': scheduledTime.toUtc().toIso8601String(),
+      'blood_request_id': bloodRequestId,
+      'specialist_id': specialistId,
+      if (notes != null && notes.isNotEmpty) 'notes': notes,
+    };
+
+    final response = await apiClient.post(
+      AppConstants.createAppointmentEP,
+      headers: header,
+      data: data,
+    );
+
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "POST - ${AppConstants.createAppointmentEP}");
   }
 
   /// Cancel an appointment with a reason
@@ -76,6 +107,7 @@ class AppointmentApi {
       data: data,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "PUT - ${AppConstants.appointmentCancelEP}");
   }
 }

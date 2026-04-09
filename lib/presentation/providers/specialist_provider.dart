@@ -220,7 +220,7 @@ class SpecialistProvider extends ChangeNotifier {
           .map((e) => SpecialistProfileModel.fromJson(e))
           .toList();
       notifyListeners();
-
+      debugPrint("General log: the specialist size is: ${specialists.length}");
       return null; // success
     }
 

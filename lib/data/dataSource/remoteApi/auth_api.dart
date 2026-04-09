@@ -16,7 +16,9 @@ class AuthApi {
       data: registerModel.toJson(),
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint:
+            "POST - ${AppConstants.registerEndpoint} \nData: ${registerModel.toJson()}");
   }
 
   Future<ResponseStatusM> loginUser(RegisterModel registerModel) async {
@@ -25,7 +27,9 @@ class AuthApi {
       data: registerModel.toJson(),
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint:
+            "POST - ${AppConstants.loginEndpoint} \nData: ${registerModel.toJson()}");
   }
 
   Future<ResponseStatusM> verifyEmailViaOtp(Map<String, dynamic> load) async {
@@ -122,7 +126,8 @@ class AuthApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "GET - ${AppConstants.consultationPreferenceEP}");
   }
 
   /// Update consultation preference for authenticated user

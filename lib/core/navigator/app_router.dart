@@ -136,7 +136,9 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.bloodRequestBooking,
-        builder: (context, state) => BloodRequestBookingScreen(),
+        builder: (context, state) => BloodRequestBookingScreen(
+          appointment: state.extra as AppointmentModel?,
+        ),
       ),
       GoRoute(
         path: AppRoutes.donorNotification,
@@ -267,7 +269,10 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.describeSymptoms,
-        builder: (context, state) => DescribeSymptomsScreen(),
+        builder: (context, state) {
+          final specialist = state.extra as SpecialistProfileModel?;
+          return DescribeSymptomsScreen(specialist: specialist);
+        },
       ),
       GoRoute(
         path: AppRoutes.filters,
@@ -275,7 +280,13 @@ class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.pickDateTime,
-        builder: (context, state) => PickDateTimeScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return PickDateTimeScreen(
+            specialist: extra?['specialist'] as SpecialistProfileModel?,
+            symptoms: extra?['symptoms'] as String?,
+          );
+        },
       ),
       GoRoute(
         path: AppRoutes.editProfilePatient,

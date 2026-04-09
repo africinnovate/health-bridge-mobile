@@ -57,6 +57,8 @@ class PatientApi {
   Future<ResponseStatusM> updateProfile({
     String? imageUrl,
     String? address,
+    String? city,
+    String? state,
     String? dob,
     String? firstName,
     String? lastName,
@@ -68,6 +70,8 @@ class PatientApi {
     final body = {
       "image_url": imageUrl,
       "address": address ?? "",
+      "city": city ?? "",
+      "state": state ?? "",
       "dob": dob ?? "",
       "first_name": firstName ?? "",
       "last_name": lastName ?? "",

@@ -257,41 +257,7 @@ class _SpecialistSetProfileScreenState
               style: TextStyle(color: Color(0xFF6B7280), height: 1.4),
             ),
 
-            const SizedBox(height: 24),
-
-            /// Profile image
-            Center(
-              child: Stack(
-                children: [
-                  const CircleAvatar(
-                    radius: 52,
-                    backgroundColor: Color(0xFFE5E7EB),
-                    // backgroundImage: AssetImage('assets/images/avatar.png'),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0xFFD32F2F),
-                      ),
-                      child: const Icon(Icons.camera_alt,
-                          size: 16, color: Colors.white),
-                    ),
-                  )
-                ],
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Center(
-              child: Text(
-                'Profile Photo (Required)',
-                style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
-              ),
-            ),
+            Divider(),
 
             const SizedBox(height: 20),
 
@@ -393,11 +359,13 @@ class _SpecialistSetProfileScreenState
             InputTextFieldWG(
               controller: phoneController,
               hintText: "Primary contact number (Required)",
+              keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 12),
             InputTextFieldWG(
               controller: altPhoneController,
               hintText: "Alternative line (optional)",
+              keyboardType: TextInputType.phone,
             ),
 
             const SizedBox(height: 20),

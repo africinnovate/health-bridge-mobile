@@ -1,13 +1,17 @@
 import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/constants/app_routes.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
+import 'package:HealthBridge/data/models/specialist/specialist_profile_model.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:HealthBridge/presentation/widgets/custom_button.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+/// not used for now -bypassed directly to pick_date_time_screen
 class DescribeSymptomsScreen extends StatefulWidget {
-  const DescribeSymptomsScreen({super.key});
+  final SpecialistProfileModel? specialist;
+
+  const DescribeSymptomsScreen({super.key, this.specialist});
 
   @override
   State<DescribeSymptomsScreen> createState() => _DescribeSymptomsScreenState();
@@ -186,7 +190,13 @@ class _DescribeSymptomsScreenState extends State<DescribeSymptomsScreen> {
                         context, "Please describe your symptoms");
                     return;
                   }
-                  context.push(AppRoutes.pickDateTime);
+                  context.push(
+                    AppRoutes.pickDateTime,
+                    extra: {
+                      'specialist': widget.specialist,
+                      'symptoms': _symptomsController.text.trim(),
+                    },
+                  );
                 },
                 text: 'Continue to Booking',
               ),
@@ -250,9 +260,7 @@ class _DescribeSymptomsScreenState extends State<DescribeSymptomsScreen> {
               color: hasPhoto ? const Color(0xFFF3F4F6) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: hasPhoto
-                    ? Colors.transparent
-                    : const Color(0xFFE5E7EB),
+                color: hasPhoto ? Colors.transparent : const Color(0xFFE5E7EB),
               ),
             ),
             child: hasPhoto

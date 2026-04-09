@@ -28,7 +28,8 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "GET - ${AppConstants.nearbyHospitalsEP}");
   }
 
   /// Get my hospital profile
@@ -39,7 +40,8 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "GET - ${AppConstants.hospitalProfileEP}");
   }
 
   Future<ResponseStatusM> getHospitalProfileById(String hospitalId) async {
@@ -49,7 +51,8 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "GET - ${AppConstants.hospitalProfileByIdEP}/$hospitalId");
   }
 
   /// Get Hospital notifications setting
@@ -60,7 +63,9 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint:
+            "GET - ${AppConstants.hospitalNotificationSettingEP}/$hospitalId");
   }
 
   /// Update Hospital notifications setting
@@ -73,7 +78,9 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint:
+            "PATCH - ${AppConstants.hospitalNotificationSettingEP}/$hospitalId");
   }
 
   /// set up hospital profile
@@ -99,7 +106,8 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "POST - ${AppConstants.createHospitalEP}");
   }
 
   /// Upload hospital accreditation document
@@ -113,7 +121,8 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "POST - /api/hospitals/upload-accreditation/$hospitalId");
   }
 
   /// Upload hospital profile image
@@ -131,6 +140,7 @@ class HospitalApi {
   }
 
   /// Get blood requests for hospital
+  /// Status -   confirmed, accepted, completed, cancelled
   Future<ResponseStatusM> getBloodRequests({String? status}) async {
     var header = await Injection.tokenHeaders();
     final queryParams =
@@ -142,7 +152,8 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "GET - ${AppConstants.bloodRequestEP} \nquery: $queryParams");
   }
 
   /// Create a new blood request
@@ -155,7 +166,8 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "POST - ${AppConstants.bloodRequestEP}");
   }
 
   /// Update blood inventory units
@@ -168,7 +180,9 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint:
+            "PATCH - ${AppConstants.updateBloodInventoryEP}/$hospitalId/$bloodType");
   }
 
   /// Update blood request ("confirmed""accepted""completed""cancelled" etc.)
@@ -181,7 +195,8 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "PUT - ${AppConstants.bloodRequestEP}/$bloodRequestId");
   }
 
   /// Get hospital dashboard stats
@@ -192,7 +207,8 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "GET - ${AppConstants.hospitalDashboardStatsEP}");
   }
 
   /// Get hospital recent activity
@@ -203,7 +219,8 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "GET - ${AppConstants.hospitalRecentActivityEP}");
   }
 
   /// Get donor list
@@ -227,7 +244,9 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint:
+            "GET - ${AppConstants.hospitalDonorsEP} \nquery: $queryParams");
   }
 
   /// Get donor stats
@@ -238,7 +257,8 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "GET - ${AppConstants.donorStatsEP}/$donorId");
   }
 
   /// Get donor donation history
@@ -249,7 +269,8 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "GET - ${AppConstants.donorHistoryEP}/$donorId");
   }
 
   /// Update donor notes and eligibility
@@ -262,7 +283,8 @@ class HospitalApi {
       headers: header,
     );
 
-    return ResponseUtils.getApiResponse(response);
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "PATCH - ${AppConstants.updateDonorEP}/$donorId");
   }
 
   /// add endpoint to get all hospital

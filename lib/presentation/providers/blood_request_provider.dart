@@ -58,12 +58,11 @@ class BloodRequestProvider extends ChangeNotifier {
         _cancelledRequests = _allRequests
             .where((r) => r.requestStatus?.toLowerCase() == 'cancelled')
             .toList();
-
         _isLoading = false;
         notifyListeners();
         return null; // success
       }
-
+      debugPrint("General log: Error fetching blood requests");
       _isLoading = false;
       notifyListeners();
       return res.message ?? 'Failed to fetch blood requests';

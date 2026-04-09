@@ -45,7 +45,7 @@ class _PatientRootScreenState extends State<PatientRootScreen> {
         // PatientAppointmentsScreen(),
         const DonorAppointmentsScreen(appointmentType: 'patient'),
 
-        PatientCareScreen(onNavigateToTab: _navigateToTab),
+        PatientCareScreen(onNavigateToTab: _navigateToTab), // Consult
         // PatientProfileScreen()
         GeneralProfileScreen(),
       ];
@@ -158,7 +158,7 @@ class _PatientRootScreenState extends State<PatientRootScreen> {
                   _buildNavItem(Icons.calendar_today_outlined,
                       Icons.calendar_today, 'Appointments', 1),
                   _buildNavItem(
-                      Icons.favorite_outline, Icons.favorite, 'Book', 2),
+                      Icons.favorite_outline, Icons.favorite, 'Consult', 2),
                   _buildNavItem(
                       Icons.person_outline, Icons.person, 'Profile', 3),
                 ],

@@ -8,12 +8,12 @@ import '../extension/inbuilt_ext.dart';
 class ResponseUtils {
   // reusable method to get api response
   static ResponseStatusM getApiResponse(Response response,
-      {String message = "Error"}) {
+      {String message = "Error", String endpoint = "API"}) {
     try {
       // print("General log: raw data mode is ${response.body}");
       ResponseStatusM model =
           ResponseStatusM.fromJson(jsonDecode(response.body));
-      print("General log: the api model is $model");
+      print("Endpoint: $endpoint \nThe api data: $model");
       return model;
       // if (response.statusCode == 200 || response.statusCode == 201) {
       //   return model;

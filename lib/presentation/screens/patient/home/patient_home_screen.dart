@@ -541,13 +541,15 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
       );
     }
 
-    final specialist = _findSpecialist(appointment.specialistId);
+    final specialist = appointment.specialistId != null
+        ? _findSpecialist(appointment.specialistId!)
+        : null;
     final specialistName = specialist != null
         ? 'Dr. ${specialist.firstName} ${specialist.lastName}'
         : 'Specialist';
     final specialtyName =
         specialist != null ? _getSpecialtyName(specialist) : 'Consultation';
-    final isSpecialist = appointment.specialistId.isNotEmpty;
+    final isSpecialist = appointment.specialistId?.isNotEmpty ?? false;
     final consultationType = isSpecialist ? 'Specialist' : 'Blood Donation';
 
     String formattedDate = 'N/A';

@@ -18,6 +18,26 @@ class AppointmentRepository {
     }
   }
 
+  Future<ResponseStatusM> createAppointment({
+    required String appointmentType,
+    required DateTime scheduledTime,
+    String? specialistId,
+    String? bloodRequestId,
+    String? notes,
+  }) async {
+    try {
+      return await appointmentApi.createAppointment(
+        appointmentType: appointmentType,
+        scheduledTime: scheduledTime,
+        specialistId: specialistId,
+        bloodRequestId: bloodRequestId,
+        notes: notes,
+      );
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
+
   Future<ResponseStatusM> rescheduleAppointment(
     String appointmentId,
     DateTime newScheduledTime,

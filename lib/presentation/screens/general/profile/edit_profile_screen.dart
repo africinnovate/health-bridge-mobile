@@ -24,6 +24,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _stateController = TextEditingController();
 
   File? _pickedImage;
   bool _removePhoto = false;
@@ -60,6 +62,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _phoneController.text = profile.phone ?? '';
       _emailController.text = profile.email;
       _addressController.text = profile.address ?? '';
+      _cityController.text = profile.city ?? '';
+      _stateController.text = profile.state ?? '';
       selectedGender = profile.gender;
 
       // Use DOB directly if available
@@ -81,6 +85,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _phoneController.dispose();
     _emailController.dispose();
     _addressController.dispose();
+    _cityController.dispose();
+    _stateController.dispose();
     super.dispose();
   }
 
@@ -149,7 +155,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(
-                                  Icons.camera_alt,
+                                  Icons.edit,
                                   color: Colors.white,
                                   size: 20,
                                 ),
@@ -462,6 +468,80 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 20),
+
+                    /// City & State
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'City',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: const Color(0xFFE5E7EB)),
+                                ),
+                                child: TextField(
+                                  controller: _cityController,
+                                  decoration: const InputDecoration(
+                                    hintText: 'City',
+                                    hintStyle:
+                                        TextStyle(fontWeight: FontWeight.w200),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.all(16),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'State',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: const Color(0xFFE5E7EB)),
+                                ),
+                                child: TextField(
+                                  controller: _stateController,
+                                  decoration: const InputDecoration(
+                                    hintText: 'State',
+                                    hintStyle:
+                                        TextStyle(fontWeight: FontWeight.w200),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.all(16),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -590,6 +670,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       gender: (selectedGender ?? "male").toLowerCase(),
       dob: dobString,
       address: _addressController.text.trim(),
+      city: _cityController.text.trim(),
+      state: _stateController.text.trim(),
       imageUrl: imageUrl,
     );
 

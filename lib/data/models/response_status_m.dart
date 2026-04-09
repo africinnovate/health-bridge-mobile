@@ -35,7 +35,7 @@ class ResponseStatusM {
       status_code: $status_code,
       message: $message,
       data: $data,
-      time: $time (${DateTime.fromMillisecondsSinceEpoch(time)})
+      time: $time (${DateTime.fromMillisecondsSinceEpoch(time)}),
     }''';
   }
 }
