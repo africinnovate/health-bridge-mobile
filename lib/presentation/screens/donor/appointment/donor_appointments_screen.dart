@@ -24,6 +24,8 @@ class DonorAppointmentsScreen extends StatefulWidget {
 }
 
 class _DonorAppointmentsScreenState extends State<DonorAppointmentsScreen> {
+  bool _isFirstLoad = true;
+
   @override
   void initState() {
     super.initState();
@@ -35,8 +37,18 @@ class _DonorAppointmentsScreenState extends State<DonorAppointmentsScreen> {
   Future<void> _loadAppointments() async {
     final appointmentProvider = context.read<AppointmentProvider>();
 
-    // Load all appointments (both upcoming and past)
-    await appointmentProvider.getAllAppointments(widget.appointmentType);
+    // Check if we already have data loaded
+    final hasData = appointmentProvider.appointments != null &&
+        appointmentProvider.appointments!.isNotEmpty;
+
+    if (_isFirstLoad || !hasData) {
+      _isFirstLoad = false;
+      // First load - wait for data to show
+      await appointmentProvider.getAllAppointments(widget.appointmentType);
+    } else {
+      // Data already loaded, refresh in background without awaiting
+      appointmentProvider.getAllAppointments(widget.appointmentType);
+    }
   }
 
   @override
@@ -51,11 +63,12 @@ class _DonorAppointmentsScreenState extends State<DonorAppointmentsScreen> {
           Expanded(
             child: Consumer<AppointmentProvider>(
               builder: (context, appointmentProvider, _) {
-                if (appointmentProvider.isLoading) {
+                final appointments = appointmentProvider.appointments ?? [];
+
+                // Only show loading if we have no appointments yet and still loading
+                if (appointments.isEmpty && appointmentProvider.isLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
-
-                final appointments = appointmentProvider.appointments ?? [];
 
                 if (appointments.isEmpty) {
                   return Center(
@@ -85,52 +98,55 @@ class _DonorAppointmentsScreenState extends State<DonorAppointmentsScreen> {
                         apt.status == 'cancelled')
                     .toList();
 
-                return SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      /// UPCOMING SECTION
-                      if (upcomingAppointments.isNotEmpty) ...[
-                        _statusBadge('Upcoming',
-                            const Color(0xFFDCFCE7), Colors.green),
-                        const SizedBox(height: 12),
-                        ...upcomingAppointments.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final appointment = entry.value;
-                          return Column(
-                            children: [
-                              _buildAppointmentCard(appointment,
-                                  showCancelButton: true),
-                              if (index < upcomingAppointments.length - 1)
-                                const SizedBox(height: 12),
-                            ],
-                          );
-                        }).toList(),
-                        const SizedBox(height: 24),
-                      ],
+                return RefreshIndicator(
+                  onRefresh: _loadAppointments,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        /// UPCOMING SECTION
+                        if (upcomingAppointments.isNotEmpty) ...[
+                          _statusBadge('Upcoming',
+                              const Color(0xFFDCFCE7), Colors.green),
+                          const SizedBox(height: 12),
+                          ...upcomingAppointments.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final appointment = entry.value;
+                            return Column(
+                              children: [
+                                _buildAppointmentCard(appointment,
+                                    showCancelButton: true),
+                                if (index < upcomingAppointments.length - 1)
+                                  const SizedBox(height: 12),
+                              ],
+                            );
+                          }).toList(),
+                          const SizedBox(height: 24),
+                        ],
 
-                      /// PAST SECTION
-                      if (pastAppointments.isNotEmpty) ...[
-                        _statusBadge('Past', const Color(0xFFFEE2E2),
-                            const Color(0xFFEF4444)),
-                        const SizedBox(height: 12),
-                        ...pastAppointments.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final appointment = entry.value;
-                          return Column(
-                            children: [
-                              _buildAppointmentCard(appointment,
-                                  showCancelButton: false),
-                              if (index < pastAppointments.length - 1)
-                                const SizedBox(height: 12),
-                            ],
-                          );
-                        }).toList(),
-                      ],
+                        /// PAST SECTION
+                        if (pastAppointments.isNotEmpty) ...[
+                          _statusBadge('Past', const Color(0xFFFEE2E2),
+                              const Color(0xFFEF4444)),
+                          const SizedBox(height: 12),
+                          ...pastAppointments.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final appointment = entry.value;
+                            return Column(
+                              children: [
+                                _buildAppointmentCard(appointment,
+                                    showCancelButton: false),
+                                if (index < pastAppointments.length - 1)
+                                  const SizedBox(height: 12),
+                              ],
+                            );
+                          }).toList(),
+                        ],
 
-                      const SizedBox(height: 40),
-                    ],
+                        const SizedBox(height: 40),
+                      ],
+                    ),
                   ),
                 );
               },

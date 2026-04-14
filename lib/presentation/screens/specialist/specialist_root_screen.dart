@@ -3,6 +3,7 @@ import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
 import 'package:HealthBridge/presentation/providers/specialist_provider.dart';
 import 'package:HealthBridge/presentation/screens/specialist/profile/specialist_profile_screen.dart';
+import 'package:HealthBridge/presentation/screens/specialist/profile/specialist_settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +15,7 @@ import '../../providers/auth_provider.dart';
 import 'appointment/appointment_requests_screen.dart';
 import 'appointment/appointment_specialist_screen.dart';
 import 'home/specialist_home_screen.dart';
+import 'wallet/specialist_wallet_screen.dart';
 
 class SpecialistRootScreen extends StatefulWidget {
   const SpecialistRootScreen({super.key});
@@ -30,7 +32,8 @@ class _SpecialistRootScreenState extends State<SpecialistRootScreen> {
     SpecialistHomeScreen(),
     SpecialistAppointmentsScreen(showArrow: false),
     AppointmentRequestsScreen(showBackArrow: false),
-    SpecialistProfileScreen(showBackArrow: false),
+    SpecialistWalletScreen(),
+    SpecialistSettingsScreen(showBackArrow: false),
   ];
 
   @override
@@ -140,9 +143,13 @@ class _SpecialistRootScreenState extends State<SpecialistRootScreen> {
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
             BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_today), label: 'Appointment'),
+                icon: Icon(Icons.calendar_today), label: 'Appointments'),
             BottomNavigationBarItem(icon: Icon(Icons.inbox), label: 'Requests'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.account_balance_wallet_outlined),
+                label: 'Wallet'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.settings_outlined), label: 'Settings'),
           ],
         ),
       ),

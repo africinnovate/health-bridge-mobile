@@ -132,11 +132,11 @@ class _DonorAppointmentDetailScreenState
                 children: [
                   CircleAvatar(
                     radius: 28,
-                    backgroundImage: isSpecialist &&
-                            appointment.specialistImageUrl != null
-                        ? NetworkImage(appointment.specialistImageUrl!)
-                            as ImageProvider
-                        : const AssetImage('assets/images/patient.png'),
+                    backgroundImage:
+                        isSpecialist && appointment.specialistImageUrl != null
+                            ? NetworkImage(appointment.specialistImageUrl!)
+                                as ImageProvider
+                            : const AssetImage('assets/images/patient.png'),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -538,29 +538,35 @@ class _DonorAppointmentDetailScreenState
     BuildContext context,
     AppointmentModel appointment,
   ) async {
+    context.showLoadingDialog();
     final appointmentProvider = context.read<AppointmentProvider>();
 
     final error = await appointmentProvider.cancelAppointment(
       appointment.id,
       'Cancelled by user',
-      appointmentType: 'donor',
+      appointmentType: appointment.appointmentType,
     );
 
-    if (mounted) {
-      if (error == null) {
-        showThankYouDialog(
-          context,
-          title: 'Appointment Cancelled',
-          message: 'Your appointment has been cancelled successfully',
-          buttonText: 'Done',
-          onContinue: () {
-            context.goBack();
-            context.goBack();
-          },
-        );
-      } else {
-        SnackBarUtils.showError(context, error);
-      }
+    if (!mounted) return;
+    context.hideLoadingDialog();
+
+    if (error == null) {
+      showThankYouDialog(
+        context,
+        title: 'Appointment Cancelled',
+        message: 'Your appointment has been cancelled successfully',
+        buttonText: 'Done',
+        onContinue: () {
+          // Delay to ensure dialog is fully dismissed before popping detail screen
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (mounted) {
+              context.goBack();
+            }
+          });
+        },
+      );
+    } else {
+      SnackBarUtils.showError(context, error);
     }
   }
 }

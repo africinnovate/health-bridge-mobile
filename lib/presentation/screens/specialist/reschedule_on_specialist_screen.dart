@@ -41,7 +41,7 @@ class _RescheduleOnSpecialistScreenState
 
   DateTime get _newScheduledTime {
     final timeParsed = DateFormat('h:mm a').parse(_selectedTime);
-    return DateTime(
+    return DateTime.utc(
       _selectedDate.year,
       _selectedDate.month,
       _selectedDate.day,

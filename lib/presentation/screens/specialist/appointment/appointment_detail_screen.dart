@@ -125,12 +125,9 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                     const SizedBox(height: 16),
                     _statusCard(),
                     const SizedBox(height: 20),
-
                     if (_isCreated) ...[
                       _primaryButton(
-                        _isConfirming
-                            ? 'Confirming...'
-                            : 'Confirm Appointment',
+                        _isConfirming ? 'Confirming...' : 'Confirm Appointment',
                         AppColors.green,
                         onTap: _isConfirming ? null : _confirmAppointment,
                       ),
@@ -150,25 +147,24 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                           Expanded(
                             child: _secondaryButton(
                               'View Profile',
-                              () => context.goNextScreen(
-                                  AppRoutes.patientProfileOnSpecialist),
+                              () => context.goNextScreenWithData(
+                                AppRoutes.patientProfileOnSpecialist,
+                                extra: _appointment,
+                              ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
                       _dangerButton(
-                        _isCancelling
-                            ? 'Cancelling...'
-                            : 'Cancel Appointment',
+                        _isCancelling ? 'Cancelling...' : 'Cancel Appointment',
                         onTap: _isCancelling ? null : _cancelAppointment,
                       ),
                     ] else if (_isUpcoming) ...[
                       _primaryButton(
-                        'Start Consultation',
+                        _isConfirming ? 'Starting...' : 'Start Consultation',
                         AppColors.green,
-                        onTap: () => SnackBarUtils.showInfo(
-                            context, 'Consultation feature coming soon'),
+                        onTap: _isConfirming ? null : _confirmAppointment,
                       ),
                       const SizedBox(height: 12),
                       Row(
@@ -186,17 +182,17 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
                           Expanded(
                             child: _secondaryButton(
                               'View Profile',
-                              () => context.goNextScreen(
-                                  AppRoutes.patientProfileOnSpecialist),
+                              () => context.goNextScreenWithData(
+                                AppRoutes.patientProfileOnSpecialist,
+                                extra: _appointment,
+                              ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
                       _dangerButton(
-                        _isCancelling
-                            ? 'Cancelling...'
-                            : 'Cancel Appointment',
+                        _isCancelling ? 'Cancelling...' : 'Cancel Appointment',
                         onTap: _isCancelling ? null : _cancelAppointment,
                       ),
                     ],
@@ -211,22 +207,26 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
   }
 
   Widget _patientCard() {
+    final patientName =
+        '${_appointment!.userFirstName ?? 'Patient'} ${_appointment!.userLastName ?? ''}';
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: _cardDecoration(),
       child: Column(
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 50,
-            backgroundImage: AssetImage('assets/images/patient.png'),
+            backgroundImage: _appointment!.userImageUrl != null
+                ? NetworkImage(_appointment!.userImageUrl!) as ImageProvider
+                : const AssetImage('assets/images/patient.png'),
             backgroundColor: Colors.transparent,
           ),
           const SizedBox(height: 12),
           _consultationTypeTag(),
           const SizedBox(height: 12),
-          const Text(
-            'Patient Appointment',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          Text(
+            patientName,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
           Text(
@@ -303,7 +303,8 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         statusColor = AppColors.red;
         statusBg = const Color(0xFFFEE2E2);
         statusLabel = 'Cancelled';
-        statusDesc = _appointment!.cancelledReason ?? 'Appointment was cancelled';
+        statusDesc =
+            _appointment!.cancelledReason ?? 'Appointment was cancelled';
         break;
       default:
         statusColor = const Color(0xFFD97706);
@@ -318,8 +319,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
       child: Row(
         children: [
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: statusBg,
               borderRadius: BorderRadius.circular(20),
@@ -337,8 +337,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
           Expanded(
             child: Text(
               statusDesc,
-              style: const TextStyle(
-                  fontSize: 13, color: Color(0xFF6B7280)),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
             ),
           ),
         ],
@@ -359,8 +358,8 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         ),
         child: Text(
           text,
-          style: const TextStyle(
-              color: Colors.white, fontWeight: FontWeight.w600),
+          style:
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -377,8 +376,7 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.grey.shade300),
         ),
-        child:
-            Text(text, style: const TextStyle(fontWeight: FontWeight.w500)),
+        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w500)),
       ),
     );
   }
@@ -416,8 +414,8 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
           SizedBox(width: 6),
           Text(
             'Consultation',
-            style: TextStyle(
-                color: AppColors.green, fontWeight: FontWeight.w500),
+            style:
+                TextStyle(color: AppColors.green, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -456,12 +454,10 @@ class _InfoRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label,
-                    style: const TextStyle(
-                        fontSize: 12, color: Colors.grey)),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey)),
                 const SizedBox(height: 2),
                 Text(value,
-                    style:
-                        const TextStyle(fontWeight: FontWeight.w500)),
+                    style: const TextStyle(fontWeight: FontWeight.w500)),
               ],
             ),
           ),

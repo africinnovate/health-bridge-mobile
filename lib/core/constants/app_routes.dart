@@ -20,6 +20,9 @@ class AppRoutes {
   static const String patientConsent = '/patient_consent';
   static const String hospitalComplete = '/hospital-complete-profile';
   static const String availabilitySpecialist = '/availability-specialist';
+  static const String profilePatientAndDonor = '/profile-patient-donor';
+  static const String specialistProfile = '/specialist-profile';
+  static const String hospitalProfile = '/hospital-profile';
 
   // blood services
   static const String bloodServiceHospital = '/blood-service-hospital';
@@ -32,13 +35,15 @@ class AppRoutes {
   static const String hospitalRootScreen = '/hospital-root-home';
   static const String newBloodRequest = '/new-blood-request';
   static const String requestDetails = '/request-details';
-  static const String donationAppointmentDetail = '/donation-appointment-detail';
+  static const String donationAppointmentDetail =
+      '/donation-appointment-detail';
   static const String rescheduleAppointment = '/reschedule-appointment';
   static const String recordDonation = '/record-donation';
   static const String updateUnits = '/update-units';
   static const String donorList = '/donor-list';
   static const String donorProfile = '/donor-profile';
   static const String hospitalDonationHistory = '/donation-history-hospital';
+  static const String bloodInventory = '/blood-inventory';
   static const String hospitalNotification = '/hospital-notification';
   static const String documentViewer = '/document-viewer';
 
@@ -81,7 +86,8 @@ class AppRoutes {
   static const String bloodRequestBooking = '/blood-request-booking';
   static const String donorNotification = '/donor-notification';
   static const String donorAppointmentDetail = '/donor-appointment-detail';
-  static const String donorAppointmentRescheduled = '/donor-appointment-rescheduled';
+  static const String donorAppointmentRescheduled =
+      '/donor-appointment-rescheduled';
   static const String donationDetails = '/donation-details';
   static const String donationReceipt = '/donation-receipt';
   static const String editProfileDonor = '/edit-profile-donor';
@@ -107,11 +113,13 @@ class AppRoutes {
   static const String rescheduleOnSpecialist = '/reschedule-appoint';
   static const String appointmentTapOnSpecialist =
       '/appointment-tapOn-specialist';
-  static const String specialistProfile = '/specialist-profile';
+  // static const String specialistProfile = '/specialist-profile';
   static const String patientProfileOnSpecialist = '/patient_profile-appoint';
   static const String editPersonalSpecialist = '/edit_personal_specialist';
   static const String homeSpecialist = '/home-specialist';
   // static const String rescheduleOnSpecialist = '/reschedule-appoint';
-  // static const String rescheduleOnSpecialist = '/reschedule-appoint';
-  // static const String rescheduleOnSpecialist = '/reschedule-appoint';
+
+  static const String referralWallet = '/referral_wallet';
+  static const String referralEarnMore = '/referral_earn_more';
+  static const String referralAnalytic = '/referral_wallet_analytic';
 }

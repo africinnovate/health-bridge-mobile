@@ -18,17 +18,42 @@ class SpecialistHomeScreen extends StatefulWidget {
 }
 
 class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
+  bool _isFirstLoad = true;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
-  Future<void> _loadData() async {
-    await Future.wait([
-      context.read<SpecialistProvider>().getSpecialistProfile(),
-      context.read<AppointmentProvider>().getAppointments('specialist'),
-    ]);
+  Future<void> _loadData({bool showLoading = true}) async {
+    final specialistProvider = context.read<SpecialistProvider>();
+    final appointmentProvider = context.read<AppointmentProvider>();
+
+    // Check if we already have data loaded
+    final hasData = specialistProvider.specialistProfileM != null &&
+        appointmentProvider.appointments != null &&
+        appointmentProvider.appointments!.isNotEmpty;
+
+    // If it's the first load or we don't have data, show loading
+    if (_isFirstLoad || !hasData) {
+      _isFirstLoad = false;
+      await specialistProvider.getSpecialistProfile();
+    } else {
+      // Data already loaded, refresh in background without showing loading
+      specialistProvider.getSpecialistProfile();
+    }
+
+    final specialistId = specialistProvider.specialistProfileM?.userId;
+    if (specialistId != null && specialistId.isNotEmpty) {
+      if (_isFirstLoad || !hasData) {
+        await appointmentProvider
+            .getAllAppointmentsBySpecialistId(specialistId);
+      } else {
+        // Refresh in background
+        appointmentProvider.getAllAppointmentsBySpecialistId(specialistId);
+      }
+    }
   }
 
   @override
@@ -74,7 +99,8 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
                         /// Next Appointment
                         _sectionTitle('Next Appointment'),
                         const SizedBox(height: 12),
-                        appointmentProvider.isLoading
+                        // Only show loading if we have no data yet and still loading
+                        all.isEmpty && appointmentProvider.isLoading
                             ? const Center(
                                 child: Padding(
                                   padding: EdgeInsets.all(20),
@@ -96,15 +122,18 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        if (requests.isEmpty && !appointmentProvider.isLoading)
-                          _emptyCard('No pending requests')
-                        else if (appointmentProvider.isLoading)
+                        // Only show loading if we have no requests yet and still loading
+                        if (requests.isEmpty &&
+                            all.isEmpty &&
+                            appointmentProvider.isLoading)
                           const Center(
                             child: Padding(
                               padding: EdgeInsets.all(20),
                               child: CircularProgressIndicator(),
                             ),
                           )
+                        else if (requests.isEmpty)
+                          _emptyCard('No pending requests')
                         else
                           ...requests.take(2).map((apt) {
                             final date =
@@ -116,10 +145,14 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
                                 .contains('video');
                             return Padding(
                               padding: const EdgeInsets.only(bottom: 12),
+                              // request card design
                               child: _requestCard(
-                                name: apt.userName != 'Unknown' ? apt.userName : (apt.userId ?? 'Unknown'),
+                                name: apt.userName != 'Unknown'
+                                    ? apt.userName
+                                    : (apt.userId ?? 'Unknown'),
                                 info:
                                     '${isVideo ? 'Video Call' : 'In Person'} • $date, $time',
+                                appointment: apt,
                                 onTap: () => context.goNextScreenWithData(
                                   AppRoutes.specialistAppointDetailScreen,
                                   extra: apt,
@@ -423,6 +456,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
                       cancelText: 'Keep',
                       icon: Icons.question_mark,
                       onConfirm: () async {
+                        context.showLoadingDialog();
                         final error = await context
                             .read<AppointmentProvider>()
                             .cancelAppointment(
@@ -430,6 +464,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
                               'Cancelled by specialist',
                               appointmentType: 'patient',
                             );
+                        context.hideLoadingDialog();
                         if (mounted) {
                           error != null
                               ? SnackBarUtils.showError(context, error)
@@ -451,6 +486,7 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
   Widget _requestCard({
     required String name,
     required String info,
+    required AppointmentModel appointment,
     VoidCallback? onTap,
   }) {
     return GestureDetector(
@@ -497,14 +533,26 @@ class _SpecialistHomeScreenState extends State<SpecialistHomeScreen> {
                   child: _filledButton(
                     'Confirm',
                     AppColors.green,
-                    onTap: () => showThankYouDialog(
-                      context,
-                      title: 'Appointment Confirmed',
-                      message:
-                          'The appointment has been confirmed and the patient has been notified.',
-                      buttonText: 'Done',
-                      onContinue: () {},
-                    ),
+                    onTap: () async {
+                      context.showLoadingDialog();
+                      final error = await context
+                          .read<AppointmentProvider>()
+                          .confirmAppointment(appointment.id);
+                      context.hideLoadingDialog();
+                      if (!mounted) return;
+                      if (error != null) {
+                        SnackBarUtils.showError(context, error);
+                      } else {
+                        showThankYouDialog(
+                          context,
+                          title: 'Appointment Confirmed',
+                          message:
+                              'The appointment has been confirmed and the patient has been notified.',
+                          buttonText: 'Done',
+                          onContinue: () {},
+                        );
+                      }
+                    },
                   ),
                 ),
                 const SizedBox(width: 10),

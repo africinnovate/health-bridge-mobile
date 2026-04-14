@@ -9,13 +9,11 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_routes.dart';
 import '../../../../core/utils/dialog.dart';
-import '../../../../core/utils/url_utils.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/specialist_provider.dart';
 
 class SpecialistProfileScreen extends StatelessWidget {
-  final bool? showBackArrow;
-  const SpecialistProfileScreen({super.key, this.showBackArrow});
+  const SpecialistProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +28,7 @@ class SpecialistProfileScreen extends StatelessWidget {
           backgroundColor: const Color(0xFFF9FAFB),
           appBar: CustomAppBar(
             title: "My Profile",
-            showArrow: showBackArrow ?? false,
+            showArrow: true,
           ),
           body: profile == null
               ? const Center(child: CircularProgressIndicator())
@@ -47,8 +45,6 @@ class SpecialistProfileScreen extends StatelessWidget {
                       _consultationTypes(context, profile),
                       const SizedBox(height: 16),
                       _schedule(context, profile),
-                      const SizedBox(height: 16),
-                      _accountSection(context),
                       const SizedBox(height: 24),
                       CustomButton(
                           onPressed: () => logout(context), text: "Log Out"),
@@ -121,7 +117,8 @@ class SpecialistProfileScreen extends StatelessWidget {
                       AppRoutes.fullImageView,
                       extra: {
                         'imageUrl': profile.imageUrl!,
-                        'title': '${profile.firstName} ${profile.lastName}'.trim(),
+                        'title':
+                            '${profile.firstName} ${profile.lastName}'.trim(),
                       },
                     )
                 : null,
@@ -293,41 +290,7 @@ class SpecialistProfileScreen extends StatelessWidget {
     );
   }
 
-  /// ---------------- Account ----------------
-  Widget _accountSection(BuildContext context) {
-    return _card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Account',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 12),
-          _accountTile(
-            Icons.lock,
-            'Change Password',
-            onTap: () async {
-              // Refresh token in background to ensure valid token for password change
-              final authProvider =
-                  Provider.of<AuthProvider>(context, listen: false);
-              authProvider.refreshAccessToken();
-
-              // Navigate immediately while token refresh happens in background
-              context.goNextScreen(AppRoutes.changePassword);
-            },
-          ),
-          _accountTile(Icons.description, 'Terms & Conditions',
-              onTap: () => UrlUtils.openTerms(context)),
-          _accountTile(Icons.language, 'Language', trailing: 'English'),
-          _accountTile(Icons.privacy_tip, 'Privacy Policy',
-              onTap: () => UrlUtils.openPrivacyPolicy(context)),
-          _accountTile(Icons.delete, 'Delete Account',
-              onTap: () => showDeleteAccountDialog(context)),
-        ],
-      ),
-    );
-  }
+  // TODO - Duration and pricing session here
 
   /// ---------------- Helpers ----------------
   Widget _card({required Widget child}) {
@@ -364,19 +327,6 @@ class SpecialistProfileScreen extends StatelessWidget {
           ...children,
         ],
       ),
-    );
-  }
-
-  Widget _accountTile(IconData icon, String title,
-      {String? trailing, VoidCallback? onTap}) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: Colors.grey),
-      title: Text(title),
-      trailing: trailing != null
-          ? Text(trailing, style: const TextStyle(color: Colors.grey))
-          : const Icon(Icons.chevron_right),
-      onTap: onTap ?? () {},
     );
   }
 }

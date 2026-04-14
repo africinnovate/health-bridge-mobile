@@ -18,6 +18,22 @@ class AppointmentRepository {
     }
   }
 
+  Future<ResponseStatusM> fetchAppointmentsBySpecialistId(
+    String specialistId, {
+    String? status,
+    String? timeline,
+  }) async {
+    try {
+      return await appointmentApi.getAppointmentsBySpecialistId(
+        specialistId,
+        status: status,
+        timeline: timeline,
+      );
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
+
   Future<ResponseStatusM> createAppointment({
     required String appointmentType,
     required DateTime scheduledTime,

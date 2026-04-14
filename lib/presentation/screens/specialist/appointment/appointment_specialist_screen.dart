@@ -5,6 +5,7 @@ import 'package:HealthBridge/core/utils/dialog.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
 import 'package:HealthBridge/data/models/appointment/appointment_model.dart';
 import 'package:HealthBridge/presentation/providers/appointment_provider.dart';
+import 'package:HealthBridge/presentation/providers/specialist_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -23,13 +24,35 @@ class SpecialistAppointmentsScreen extends StatefulWidget {
 class _SpecialistAppointmentsScreenState
     extends State<SpecialistAppointmentsScreen> {
   int selectedTab = 0;
+  bool _isFirstLoad = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppointmentProvider>().getAllAppointments('patient');
+      _loadAppointments();
     });
+  }
+
+  Future<void> _loadAppointments() async {
+    final specialistProvider = context.read<SpecialistProvider>();
+    final appointmentProvider = context.read<AppointmentProvider>();
+
+    // Check if we already have data loaded
+    final hasData = appointmentProvider.appointments != null &&
+        appointmentProvider.appointments!.isNotEmpty;
+
+    final specialistId = specialistProvider.specialistProfileM?.userId;
+    if (specialistId != null && specialistId.isNotEmpty) {
+      if (_isFirstLoad || !hasData) {
+        _isFirstLoad = false;
+        // First load - wait for data to show
+        await appointmentProvider.getAllAppointmentsBySpecialistId(specialistId);
+      } else {
+        // Data already loaded, refresh in background without awaiting
+        appointmentProvider.getAllAppointmentsBySpecialistId(specialistId);
+      }
+    }
   }
 
   @override
@@ -46,11 +69,12 @@ class _SpecialistAppointmentsScreenState
             Expanded(
               child: Consumer<AppointmentProvider>(
                 builder: (context, provider, _) {
-                  if (provider.isLoading) {
+                  final all = provider.appointments ?? [];
+
+                  // Only show loading if we have no data yet and still loading
+                  if (all.isEmpty && provider.isLoading) {
                     return const Center(child: CircularProgressIndicator());
                   }
-
-                  final all = provider.appointments ?? [];
 
                   final List<AppointmentModel> list;
                   if (selectedTab == 0) {
@@ -60,20 +84,16 @@ class _SpecialistAppointmentsScreenState
                             a.status == 'rescheduled' ||
                             a.status == 'created')
                         .toList()
-                      ..sort((a, b) =>
-                          a.scheduledTime.compareTo(b.scheduledTime));
+                      ..sort(
+                          (a, b) => a.scheduledTime.compareTo(b.scheduledTime));
                   } else if (selectedTab == 1) {
-                    list = all
-                        .where((a) => a.status == 'completed')
-                        .toList()
-                      ..sort((a, b) =>
-                          b.scheduledTime.compareTo(a.scheduledTime));
+                    list = all.where((a) => a.status == 'completed').toList()
+                      ..sort(
+                          (a, b) => b.scheduledTime.compareTo(a.scheduledTime));
                   } else {
-                    list = all
-                        .where((a) => a.status == 'cancelled')
-                        .toList()
-                      ..sort((a, b) =>
-                          b.scheduledTime.compareTo(a.scheduledTime));
+                    list = all.where((a) => a.status == 'cancelled').toList()
+                      ..sort(
+                          (a, b) => b.scheduledTime.compareTo(a.scheduledTime));
                   }
 
                   if (list.isEmpty) {
@@ -93,14 +113,12 @@ class _SpecialistAppointmentsScreenState
                   }
 
                   return RefreshIndicator(
-                    onRefresh: () =>
-                        provider.getAllAppointments('patient'),
+                    onRefresh: () => provider.getAllAppointments('patient'),
                     color: AppColors.red,
                     child: ListView.separated(
                       padding: const EdgeInsets.all(20),
                       itemCount: list.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: 16),
+                      separatorBuilder: (_, __) => const SizedBox(height: 16),
                       itemBuilder: (_, index) {
                         return _appointmentCard(list[index]);
                       },
@@ -149,8 +167,7 @@ class _SpecialistAppointmentsScreenState
             text,
             style: TextStyle(
               color: selected ? Colors.white : Colors.black,
-              fontWeight:
-                  selected ? FontWeight.w600 : FontWeight.normal,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
         ),
@@ -164,8 +181,7 @@ class _SpecialistAppointmentsScreenState
     try {
       formattedDate =
           DateFormat('MMM d, yyyy').format(appointment.scheduledTime);
-      formattedTime =
-          DateFormat('h:mm a').format(appointment.scheduledTime);
+      formattedTime = DateFormat('h:mm a').format(appointment.scheduledTime);
     } catch (_) {}
 
     final isUpcoming = selectedTab == 0;
@@ -186,8 +202,7 @@ class _SpecialistAppointmentsScreenState
             Row(
               children: [
                 const CircleAvatar(
-                  backgroundImage:
-                      AssetImage('assets/images/patient.png'),
+                  backgroundImage: AssetImage('assets/images/patient.png'),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -196,8 +211,7 @@ class _SpecialistAppointmentsScreenState
                     children: [
                       Text(
                         'Patient Appointment',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w500),
+                        style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                       const SizedBox(height: 4),
                       Row(
@@ -215,8 +229,8 @@ class _SpecialistAppointmentsScreenState
                 ),
                 if (appointment.status == 'created')
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFEF3C7),
                       borderRadius: BorderRadius.circular(6),
@@ -261,8 +275,7 @@ class _SpecialistAppointmentsScreenState
                         cancelText: 'Keep',
                         icon: Icons.question_mark,
                         onConfirm: () async {
-                          final provider =
-                              context.read<AppointmentProvider>();
+                          final provider = context.read<AppointmentProvider>();
                           final error = await provider.cancelAppointment(
                             appointment.id,
                             'Cancelled by specialist',
@@ -309,8 +322,7 @@ class _SpecialistAppointmentsScreenState
         ),
         child: Text(
           text,
-          style: TextStyle(
-              color: textColor, fontWeight: FontWeight.w500),
+          style: TextStyle(color: textColor, fontWeight: FontWeight.w500),
         ),
       ),
     );

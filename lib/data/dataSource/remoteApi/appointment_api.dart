@@ -30,6 +30,29 @@ class AppointmentApi {
         endpoint: "GET - ${AppConstants.appointmentsEP} \nquery: $query");
   }
 
+  /// Get appointments for a specialist by specialist ID
+  Future<ResponseStatusM> getAppointmentsBySpecialistId(
+    String specialistId, {
+    String? status,
+    String? timeline,
+  }) async {
+    var header = await Injection.tokenHeaders();
+    final query = {
+      "specialist_id": specialistId,
+      if (status != null) "status": status,
+      if (timeline != null) "timeline": timeline,
+    };
+
+    final response = await apiClient.get(
+      AppConstants.appointmentsEP,
+      headers: header,
+      query: query,
+    );
+
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "GET - ${AppConstants.appointmentsEP} \nquery: $query");
+  }
+
   /// Reschedule an appointment with a new scheduled time
   Future<ResponseStatusM> rescheduleAppointment(
     String appointmentId,
@@ -39,7 +62,6 @@ class AppointmentApi {
     final data = {
       "scheduled_time": newScheduledTime.toIso8601String(),
     };
-    debugPrint("Reschedule Response: I reach here");
 
     final response = await apiClient.put(
       '${AppConstants.appointmentRescheduleEP}/$appointmentId',
@@ -48,7 +70,8 @@ class AppointmentApi {
     );
     debugPrint("Reschedule Response: ${response.statusCode}}");
     return ResponseUtils.getApiResponse(response,
-        endpoint: "PUT - ${AppConstants.appointmentRescheduleEP} ");
+        endpoint:
+            "PUT - ${AppConstants.appointmentRescheduleEP}/$appointmentId \nData: $data");
   }
 
   /// Confirm an appointment (specialist action)
@@ -61,7 +84,7 @@ class AppointmentApi {
     );
 
     return ResponseUtils.getApiResponse(response,
-        endpoint: "PUT - ${AppConstants.appointmentConfirmEP}");
+        endpoint: "PUT - ${AppConstants.appointmentConfirmEP}/$appointmentId");
   }
 
   /// Create a new appointment (donor or patient initiates)
@@ -108,6 +131,6 @@ class AppointmentApi {
     );
 
     return ResponseUtils.getApiResponse(response,
-        endpoint: "PUT - ${AppConstants.appointmentCancelEP}");
+        endpoint: "PUT - ${AppConstants.appointmentCancelEP}/$appointmentId");
   }
 }

@@ -53,6 +53,30 @@ class PatientProvider extends ChangeNotifier {
     return res.message ?? 'Failed to fetch patient profile';
   }
 
+  /// Specialist view: get patient profile by specialist (for appointment details screen and patient profile on specialist screen)
+  Future<String?> getPatientProfileBySpecialist() async {
+    // fetch from api and update
+    final res = await getResponse(patientRepository.getPatientProfile());
+
+    if (ResponseUtils.isSuccessful(res)) {
+      if (res.data == null) return 'Invalid server response';
+
+      final profile = PatientProfileModel.fromJson(res.data);
+      // return unverified so user can be navigated to email verification screen
+      if (!profile.emailVerified) return AppConstants.emailUnverified;
+
+      // save to secure storage (typed)
+      await SecureStorage.saveProfile<PatientProfileModel>(profile);
+
+      patientProfileM = profile;
+      notifyListeners();
+
+      return null; // success
+    }
+
+    return res.message ?? 'Failed to fetch patient profile';
+  }
+
   // update patient medical info - ronokinno@gmail.com
 
   Future<String?> updateMedicalInfo({

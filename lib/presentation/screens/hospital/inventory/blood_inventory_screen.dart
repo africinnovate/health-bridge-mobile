@@ -8,7 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class BloodInventoryScreen extends StatefulWidget {
-  const BloodInventoryScreen({super.key});
+  final bool showBackArrow;
+
+  const BloodInventoryScreen({super.key, this.showBackArrow = false});
 
   @override
   State<BloodInventoryScreen> createState() => _BloodInventoryScreenState();
@@ -83,7 +85,7 @@ class _BloodInventoryScreenState extends State<BloodInventoryScreen> {
         return Scaffold(
           appBar: CustomAppBar(
             title: "Blood Inventory",
-            showArrow: false,
+            showArrow: widget.showBackArrow,
           ),
           backgroundColor: AppColors.backgroundGray,
           body: SafeArea(

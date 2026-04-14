@@ -120,7 +120,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
   AppointmentModel? get _nextAppointment {
     final all = context.read<AppointmentProvider>().appointments ?? [];
     final upcoming = all
-        .where((a) => a.status == 'confirmed' || a.status == 'rescheduled')
+        .where((a) => a.status == 'created' || a.status == 'confirmed' || a.status == 'rescheduled')
         .toList();
     if (upcoming.isEmpty) return null;
     upcoming.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
@@ -561,7 +561,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
 
     return GestureDetector(
       onTap: () => context.goNextScreenWithData(
-          AppRoutes.patientAppointmentDetail,
+          AppRoutes.donorAppointmentDetail,
           extra: appointment),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 20),

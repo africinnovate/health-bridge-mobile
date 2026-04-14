@@ -2,6 +2,7 @@ import 'package:HealthBridge/core/constants/app_colors.dart';
 import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/data/models/appointment/appointment_model.dart';
 import 'package:HealthBridge/presentation/providers/appointment_provider.dart';
+import 'package:HealthBridge/presentation/providers/specialist_provider.dart';
 import 'package:HealthBridge/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -20,6 +21,8 @@ class AppointmentRequestsScreen extends StatefulWidget {
 }
 
 class _AppointmentRequestsScreenState extends State<AppointmentRequestsScreen> {
+  bool _isFirstLoad = true;
+
   @override
   void initState() {
     super.initState();
@@ -29,8 +32,24 @@ class _AppointmentRequestsScreenState extends State<AppointmentRequestsScreen> {
   }
 
   Future<void> _loadAppointmentRequests() async {
-    final provider = context.read<AppointmentProvider>();
-    await provider.getAppointments('specialist', status: 'created');
+    final specialistProvider = context.read<SpecialistProvider>();
+    final appointmentProvider = context.read<AppointmentProvider>();
+
+    // Check if we already have data loaded
+    final hasData = appointmentProvider.appointments != null &&
+        appointmentProvider.appointments!.isNotEmpty;
+
+    final specialistId = specialistProvider.specialistProfileM?.userId;
+    if (specialistId != null && specialistId.isNotEmpty) {
+      if (_isFirstLoad || !hasData) {
+        _isFirstLoad = false;
+        // First load - wait for data to show
+        await appointmentProvider.getAllAppointmentsBySpecialistId(specialistId);
+      } else {
+        // Data already loaded, refresh in background without awaiting
+        appointmentProvider.getAllAppointmentsBySpecialistId(specialistId);
+      }
+    }
   }
 
   @override
@@ -44,13 +63,13 @@ class _AppointmentRequestsScreenState extends State<AppointmentRequestsScreen> {
       body: SafeArea(
         child: Consumer<AppointmentProvider>(
           builder: (context, provider, _) {
-            if (provider.isLoading) {
+            final all = provider.appointments ?? [];
+            final requests = all.where((a) => a.status == 'created').toList();
+
+            // Only show loading if we have no requests yet and still loading
+            if (requests.isEmpty && all.isEmpty && provider.isLoading) {
               return const Center(child: CircularProgressIndicator());
             }
-
-            final requests = (provider.appointments ?? [])
-                .where((a) => a.status == 'created')
-                .toList();
 
             if (requests.isEmpty) {
               return const Center(
@@ -138,8 +157,7 @@ class AppointmentRequestCard extends StatelessWidget {
   }
 
   Widget _metaRow() {
-    final isVideo =
-        appointment.appointmentType.toLowerCase().contains('video');
+    final isVideo = appointment.appointmentType.toLowerCase().contains('video');
     final formattedTime =
         DateFormat('MMM d, h:mm a').format(appointment.scheduledTime);
 

@@ -17,6 +17,14 @@ class SpecialistRepository {
     }
   }
 
+  Future<ResponseStatusM> getPatientProfileForSpecialist(String patientId) async {
+    try {
+      return await specialistApi.getPatientProfileForSpecialist(patientId);
+    } catch (e) {
+      return ResponseUtils.checkError(e);
+    }
+  }
+
   Future<ResponseStatusM> getSpecialties() async {
     try {
       return await specialistApi.getSpecialties();

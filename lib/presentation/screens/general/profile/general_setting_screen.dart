@@ -12,27 +12,23 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 /// this screen is used by patient and donor
-class GeneralProfileScreen extends StatefulWidget {
-  const GeneralProfileScreen({super.key});
+class GeneralSettingScreen extends StatefulWidget {
+  const GeneralSettingScreen({super.key});
 
   @override
-  State<GeneralProfileScreen> createState() => _GeneralProfileScreenState();
+  State<GeneralSettingScreen> createState() => _GeneralSettingScreenState();
 }
 
-class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
+class _GeneralSettingScreenState extends State<GeneralSettingScreen> {
+  bool isPatient = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        // title: const Text('My Profile'),
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        foregroundColor: AppColors.textPrimary,
-      ),
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+          padding: const EdgeInsets.all(20),
           child: Consumer<PatientProvider>(
             builder: (context, provider, child) {
               final profile = provider.patientProfileM;
@@ -40,9 +36,11 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const SizedBox(height: 16),
+
                   /// Title
                   const Text(
-                    'My Profile',
+                    'Settings',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -58,32 +56,53 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
                       color: Color(0xFF6B7280),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 18),
 
-                  /// Profile Card
-                  _buildProfileCard(profile),
-                  const SizedBox(height: 24),
+                  RoleToggle(
+                    isPatient: isPatient,
+                    onChanged: (value) {
+                      setState(() {
+                        isPatient = value;
+                      });
+                    },
+                  ),
 
-                  /// Personal Information
-                  _sectionTitle('Personal Information'),
+                  const SizedBox(height: 18),
+
+                  /// Account
+                  _sectionTitle('Account'),
                   const SizedBox(height: 12),
-                  _buildPersonalInfoSection(profile),
-
+                  _buildAccountSection(),
                   const SizedBox(height: 24),
 
-                  /// Medical Information (Only for patients)
-                  if (profile?.role.toLowerCase() == 'patient') ...[
-                    _sectionTitle('Medical Information'),
-                    const SizedBox(height: 12),
-                    _buildMedicalInfoSection(profile),
-                    const SizedBox(height: 5),
-                    _editMedButton(() {
-                      // Now use the patient_set_profile as edit profile too
-                      context.goNextScreen(AppRoutes.setProfilePatient);
-                    }),
-                    const SizedBox(height: 24),
-                  ],
+                  /// Preferences
+                  _sectionTitle('Preferences'),
+                  const SizedBox(height: 12),
+                  _buildPreferencesSection(),
+                  const SizedBox(height: 24),
 
+                  /// My Records
+                  _sectionTitle('My Records'),
+                  const SizedBox(height: 12),
+                  _buildMyRecordsSection(),
+                  const SizedBox(height: 24),
+
+                  /// Others
+                  _sectionTitle('Others'),
+                  const SizedBox(height: 12),
+                  _buildOthersSection(),
+                  const SizedBox(height: 24),
+
+                  /// Log Out Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: CustomButton(
+                        onPressed: () {
+                          _showLogoutDialog();
+                        },
+                        text: 'Log Out'),
+                  ),
                   const SizedBox(height: 40),
                 ],
               );
@@ -162,209 +181,6 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
     }
   }
 
-  Widget _buildProfileCard(profile) {
-    final fullName =
-        '${profile?.firstName ?? ''} ${profile?.lastName ?? ''}'.trim();
-    final phone = profile?.phone ?? 'N/A';
-    final email = profile?.email ?? 'N/A';
-    final imageUrl = profile?.image_url;
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundGray,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.facebook.withOpacity(0.5)),
-      ),
-      child: Column(
-        children: [
-          /// Profile Image
-          InkWell(
-            onTap: () {
-              context.push(
-                AppRoutes.fullImageView,
-                extra: {
-                  'imageUrl': imageUrl ?? '',
-                  'title': fullName.isNotEmpty ? fullName : 'User',
-                },
-              );
-            },
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: AppColors.red,
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  image: imageUrl != null && imageUrl.isNotEmpty
-                      ? NetworkImage(imageUrl)
-                      : const AssetImage('assets/images/patient.png')
-                          as ImageProvider,
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          /// Name
-          Text(
-            fullName.isNotEmpty ? fullName : 'User',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          /// Phone
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.phone, size: 16, color: Color(0xFF6B7280)),
-              const SizedBox(width: 6),
-              Text(
-                phone,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF6B7280),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          /// Email
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.email_outlined,
-                  size: 16, color: Color(0xFF6B7280)),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  email,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF6B7280),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          /// Edit Profile Button
-          OutlinedButton.icon(
-            onPressed: () {
-              context.goNextScreen(AppRoutes.editProfileDonor);
-            },
-            icon: const Icon(Icons.edit_outlined, size: 16),
-            label: const Text('Edit Profile'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF6B7280),
-              side: const BorderSide(color: Color(0xFFD1D5DB)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPersonalInfoSection(profile) {
-    final fullName =
-        '${profile?.firstName ?? ''} ${profile?.lastName ?? ''}'.trim();
-    final dob = profile?.dob != null
-        ? '${profile!.dob!.day}/${profile.dob!.month}/${profile.dob!.year}'
-        : 'N/A';
-    final gender = profile?.gender ?? 'N/A';
-    final bloodType = profile?.bloodType ?? 'N/A';
-    final address = profile?.address ?? 'N/A';
-    final city = profile?.city ?? 'N/A';
-    final state = profile?.state ?? 'N/A';
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundGray.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        children: [
-          _infoRow('Full Name', fullName.isNotEmpty ? fullName : 'N/A'),
-          const Divider(height: 24),
-          _infoRow('Date of Birth', dob),
-          const Divider(height: 24),
-          _infoRow('Gender', gender),
-          if (profile?.role?.toLowerCase() == 'patient') ...[
-            const Divider(height: 24),
-            _infoRow('Blood Type', bloodType),
-          ],
-          const Divider(height: 24),
-          _infoRow('Address', address),
-          const Divider(height: 24),
-          _infoRow('City', city),
-          const Divider(height: 24),
-          _infoRow('State', state),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMedicalInfoSection(profile) {
-    final allergies = profile.allergies ?? 'N/A';
-    final existing_conditions = profile.existing_conditions ?? 'N/A';
-    final medications = profile.medications ?? 'N/A';
-    final primaryPhysician = profile.primary_physician ?? 'N/A';
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundGray.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        children: [
-          _infoRow('Allergies', allergies),
-          const Divider(height: 24),
-          _infoRow('Existing Conditions', existing_conditions),
-          const Divider(height: 24),
-          _infoRow('Medications', medications),
-          const Divider(height: 24),
-          _infoRow('Primary Physician', primaryPhysician),
-        ],
-      ),
-    );
-  }
-
-  Widget _editMedButton(VoidCallback onPressed) {
-    return SizedBox(
-      width: double.infinity,
-      child: TextButton(
-        onPressed: onPressed,
-        style: TextButton.styleFrom(
-          backgroundColor: AppColors.backgroundGray,
-          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-        child: const Text(
-          'Edit',
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildPreferencesSection() {
     return Container(
       decoration: BoxDecoration(
@@ -395,14 +211,6 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
             trailing: 'English',
             onTap: () {
               context.goNextScreen(AppRoutes.languageSettings);
-            },
-          ),
-          const Divider(height: 1, indent: 56),
-          _menuItem(
-            icon: Icons.lock_outline,
-            title: 'Privacy Settings',
-            onTap: () {
-              context.goNextScreen(AppRoutes.privacySettings);
             },
           ),
         ],
@@ -442,7 +250,7 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
     );
   }
 
-  Widget _buildSupportSection() {
+  Widget _buildOthersSection() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -451,29 +259,36 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
       child: Column(
         children: [
           _menuItem(
-            icon: Icons.help_outline,
-            iconColor: AppColors.green,
-            title: 'Help Center',
-            onTap: () {
-              context.goNextScreen(AppRoutes.helpCenter);
-            },
+            icon: Icons.description_outlined,
+            iconColor: const Color(0xFF6B7280),
+            title: 'Terms & Conditions',
+            onTap: () => UrlUtils.openTerms(context),
           ),
           const Divider(height: 1, indent: 56),
-          // _menuItem(
-          //   icon: Icons.quiz_outlined,
-          //   iconColor: AppColors.green,
-          //   title: 'FAQs',
-          //   onTap: () {
-          //     context.goNextScreen(AppRoutes.faqs);
-          //   },
-          // ),
-          // const Divider(height: 1, indent: 56),
+          _menuItem(
+            icon: Icons.shield_outlined,
+            iconColor: const Color(0xFF6B7280),
+            title: 'Privacy Policy',
+            onTap: () => UrlUtils.openPrivacyPolicy(context),
+          ),
+          const Divider(height: 1, indent: 56),
           _menuItem(
             icon: Icons.chat_bubble_outline,
             iconColor: AppColors.green,
             title: 'Contact Support',
             onTap: () {
               context.goNextScreen(AppRoutes.contactSupport);
+            },
+          ),
+          const Divider(height: 1, indent: 56),
+          _menuItem(
+            iconColor: AppColors.red,
+            titleColor: AppColors.red,
+            icon: Icons.lock_outline,
+            title:
+                'Delete Account', // TODO - implement the logic from privacySettings, move it here and delete that screen
+            onTap: () {
+              context.goNextScreen(AppRoutes.privacySettings);
             },
           ),
         ],
@@ -490,6 +305,23 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
       child: Column(
         children: [
           _menuItem(
+            icon: Icons.person,
+            iconColor: const Color(0xFF6B7280),
+            title: 'Profile',
+            onTap: () async {
+              context.goNextScreen(AppRoutes.profilePatientAndDonor);
+            },
+          ),
+          const Divider(height: 1, indent: 56),
+          _menuItem(
+            icon: Icons.wallet_outlined,
+            iconColor: const Color(0xFF6B7280),
+            title: 'Bank Account',
+            onTap: () => SnackBarUtils.showInfo(
+                context, "Bank account feature coming soon!"),
+          ),
+          const Divider(height: 1, indent: 56),
+          _menuItem(
             icon: Icons.key_outlined,
             iconColor: const Color(0xFF6B7280),
             title: 'Change Password',
@@ -505,17 +337,10 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
           ),
           const Divider(height: 1, indent: 56),
           _menuItem(
-            icon: Icons.description_outlined,
-            iconColor: const Color(0xFF6B7280),
-            title: 'Terms & Conditions',
-            onTap: () => UrlUtils.openTerms(context),
-          ),
-          const Divider(height: 1, indent: 56),
-          _menuItem(
             icon: Icons.shield_outlined,
             iconColor: const Color(0xFF6B7280),
-            title: 'Privacy Policy',
-            onTap: () => UrlUtils.openPrivacyPolicy(context),
+            title: 'Referrals',
+            onTap: () => context.push(AppRoutes.referralWallet),
           ),
         ],
       ),
@@ -562,13 +387,17 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
   Widget _menuItem({
     required IconData icon,
     Color? iconColor,
+    Color? titleColor,
     required String title,
     required VoidCallback onTap,
   }) {
     return ListTile(
       leading:
           Icon(icon, color: iconColor ?? const Color(0xFF6B7280), size: 22),
-      title: CustomText(text: title, color: AppColors.textPrimary, size: 14),
+      title: CustomText(
+          text: title,
+          color: titleColor == null ? AppColors.textPrimary : titleColor,
+          size: 14),
       trailing: const Icon(Icons.chevron_right, color: Color(0xFF9CA3AF)),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -621,6 +450,75 @@ class _GeneralProfileScreenState extends State<GeneralProfileScreen> {
       ),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    );
+  }
+}
+
+class RoleToggle extends StatelessWidget {
+  final bool isPatient;
+  final ValueChanged<bool> onChanged;
+
+  const RoleToggle({
+    super.key,
+    required this.isPatient,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 14),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F5),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _item(
+              title: 'PATIENT',
+              selected: isPatient,
+              onTap: () => onChanged(true),
+            ),
+          ),
+          Expanded(
+            child: _item(
+              title: 'DONOR',
+              selected: !isPatient,
+              onTap: () => onChanged(false),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _item({
+    required String title,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.red : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: selected ? Colors.white : const Color(0xFF9CA3AF),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -47,6 +47,7 @@ class AppointmentProvider extends ChangeNotifier {
   }
 
   /// Fetch all appointments (both upcoming and past) for the given appointment type
+  /// status: created, confirmed, rescheduled, cancelled, completed
   Future<String?> getAllAppointments(String appointmentType) async {
     _isLoading = true;
     notifyListeners();
@@ -83,17 +84,115 @@ class AppointmentProvider extends ChangeNotifier {
 
       // Merge both lists (upcoming first, then past)
       final allData = [...upcomingData, ...pastData];
+      print("General log: Upcoming count - ${upcomingData.length}, Past count - ${pastData.length}, Total before dedup - ${allData.length}");
 
-      appointments = allData
-          .map(
-              (json) => AppointmentModel.fromJson(json as Map<String, dynamic>))
-          .toList();
+      // Deduplicate by appointment ID to avoid showing the same appointment twice
+      final Set<String> seenIds = {};
+      final uniqueData = <Map<String, dynamic>>[];
 
+      for (final item in allData) {
+        final json = item as Map<String, dynamic>;
+        // Get ID from nested appointment object or top level
+        final id = (json['appointment'] as Map<String, dynamic>?)?['id'] ?? json['id'];
+        if (id != null) {
+          final idStr = id.toString();
+          if (!seenIds.contains(idStr)) {
+            seenIds.add(idStr);
+            uniqueData.add(json);
+          } else {
+            print("General log: Duplicate appointment ID found and removed - $idStr");
+          }
+        } else {
+          // If no id, add it anyway to avoid losing data
+          uniqueData.add(json);
+        }
+      }
+
+      appointments =
+          uniqueData.map((json) => AppointmentModel.fromJson(json)).toList();
+
+      // get the appointments list size
+      print(
+          "General log: Total appointments fetched - ${appointments?.length}");
       _isLoading = false;
       notifyListeners();
       return null; // success
     } catch (e) {
       print("Error in getAllAppointments: $e");
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  /// Fetch all appointments (both upcoming and past) for a specialist by specialist ID
+  Future<String?> getAllAppointmentsBySpecialistId(String specialistId) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      // Fetch upcoming appointments using timeline filter
+      final upcomingRes = await appointmentRepository.fetchAppointmentsBySpecialistId(
+        specialistId,
+        timeline: 'upcoming',
+      );
+
+      if (!ResponseUtils.isSuccessful(upcomingRes)) {
+        _isLoading = false;
+        notifyListeners();
+        return upcomingRes.message ?? 'Failed to fetch upcoming appointments';
+      }
+
+      // Fetch past appointments using timeline filter
+      final pastRes = await appointmentRepository.fetchAppointmentsBySpecialistId(
+        specialistId,
+        timeline: 'this_month',
+      );
+
+      if (!ResponseUtils.isSuccessful(pastRes)) {
+        _isLoading = false;
+        notifyListeners();
+        return pastRes.message ?? 'Failed to fetch past appointments';
+      }
+
+      // Parse both lists
+      final List<dynamic> upcomingData =
+          upcomingRes.data is List ? upcomingRes.data : [];
+      final List<dynamic> pastData = pastRes.data is List ? pastRes.data : [];
+
+      // Merge both lists (upcoming first, then past)
+      final allData = [...upcomingData, ...pastData];
+
+      // Deduplicate by appointment ID to avoid showing the same appointment twice
+      final Set<String> seenIds = {};
+      final uniqueData = <Map<String, dynamic>>[];
+
+      for (final item in allData) {
+        final json = item as Map<String, dynamic>;
+        // Get ID from nested appointment object or top level
+        final id = (json['appointment'] as Map<String, dynamic>?)?['id'] ?? json['id'];
+        if (id != null) {
+          final idStr = id.toString();
+          if (!seenIds.contains(idStr)) {
+            seenIds.add(idStr);
+            uniqueData.add(json);
+          }
+        } else {
+          // If no id, add it anyway to avoid losing data
+          uniqueData.add(json);
+        }
+      }
+
+      appointments =
+          uniqueData.map((json) => AppointmentModel.fromJson(json)).toList();
+
+      print(
+          "General log: Total specialist appointments fetched - ${appointments?.length}");
+      _isLoading = false;
+      notifyListeners();
+      return null; // success
+    } catch (e) {
+      print("Error in getAllAppointmentsBySpecialistId: $e");
       _isLoading = false;
       notifyListeners();
       rethrow;
@@ -207,7 +306,6 @@ class AppointmentProvider extends ChangeNotifier {
       if (res.data == null) {
         return 'Invalid server response';
       }
-
       // Reload appointments after successful cancellation
       await getAllAppointments(appointmentType);
       return null; // success

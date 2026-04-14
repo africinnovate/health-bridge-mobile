@@ -6,7 +6,9 @@ import 'package:HealthBridge/presentation/screens/hospital/donations/donation_ap
 import 'package:HealthBridge/presentation/screens/hospital/home/hospital_home_screen.dart';
 import 'package:HealthBridge/presentation/screens/hospital/inventory/blood_inventory_screen.dart';
 import 'package:HealthBridge/presentation/screens/hospital/profile/hospital_profile_screen.dart';
+import 'package:HealthBridge/presentation/screens/hospital/profile/hospital_settings_screen.dart';
 import 'package:HealthBridge/presentation/screens/hospital/requests/blood_requests_screen.dart';
+import 'package:HealthBridge/presentation/screens/hospital/wallet/hospital_wallet_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -42,8 +44,9 @@ class _HospitalRootScreenState extends State<HospitalRootScreen> {
         HospitalHomeScreen(onNavigateToTab: _navigateToTab),
         const BloodRequestsScreen(),
         const DonationAppointmentsScreen(),
-        const BloodInventoryScreen(),
-        const HospitalProfileScreen(),
+        // const BloodInventoryScreen(),
+        const HospitalWalletScreen(),
+        const HospitalSettingsScreen(),
       ];
 
   @override
@@ -158,10 +161,10 @@ class _HospitalRootScreenState extends State<HospitalRootScreen> {
                       'Requests', 1),
                   _buildNavItem(Icons.monitor_heart_outlined,
                       Icons.monitor_heart, 'Donations', 2),
-                  _buildNavItem(Icons.inventory_2_outlined, Icons.inventory_2,
-                      'Inventory', 3),
+                  _buildNavItem(Icons.account_balance_wallet_outlined,
+                      Icons.account_balance_wallet, 'Wallet', 3),
                   _buildNavItem(
-                      Icons.person_outline, Icons.person, 'Profile', 4),
+                      Icons.settings_outlined, Icons.settings, 'Settings', 4),
                 ],
               ),
             ),

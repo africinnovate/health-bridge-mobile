@@ -66,6 +66,9 @@ class AppConstants {
   /// /api/specialists/{id}
   static const String specialistProfileEP = '/api/specialists';
 
+  /// /api/specialists/patients/{id}
+  static const String specialistPatientProfileEP = '/api/specialists/patients';
+
   /// /api/specialists/specialties
   static const String specialtiesEP = '/api/specialists/specialties';
 

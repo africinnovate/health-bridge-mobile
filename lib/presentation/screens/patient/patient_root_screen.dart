@@ -5,10 +5,12 @@ import 'package:HealthBridge/core/extension/inbuilt_ext.dart';
 import 'package:HealthBridge/core/utils/snackbar_utils.dart';
 import 'package:HealthBridge/main.dart';
 import 'package:HealthBridge/presentation/providers/patient_provider.dart';
+import 'package:HealthBridge/presentation/screens/general/profile/general_setting_screen.dart';
 import 'package:HealthBridge/presentation/screens/patient/appointments/patient_appointments_screen.dart';
 import 'package:HealthBridge/presentation/screens/patient/care/patient_care_screen.dart';
 import 'package:HealthBridge/presentation/screens/patient/home/patient_home_screen.dart';
 import 'package:HealthBridge/presentation/screens/patient/profile/patient_profile_screen.dart';
+import 'package:HealthBridge/presentation/screens/general/wallet/wallet_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -42,12 +44,10 @@ class _PatientRootScreenState extends State<PatientRootScreen> {
 
   List<Widget> get _screens => [
         PatientHomeScreen(onNavigateToTab: _navigateToTab),
-        // PatientAppointmentsScreen(),
         const DonorAppointmentsScreen(appointmentType: 'patient'),
-
-        PatientCareScreen(onNavigateToTab: _navigateToTab), // Consult
-        // PatientProfileScreen()
-        GeneralProfileScreen(),
+        PatientCareScreen(onNavigateToTab: _navigateToTab),
+        const WalletScreen(),
+        GeneralSettingScreen(),
       ];
 
   @override
@@ -158,9 +158,11 @@ class _PatientRootScreenState extends State<PatientRootScreen> {
                   _buildNavItem(Icons.calendar_today_outlined,
                       Icons.calendar_today, 'Appointments', 1),
                   _buildNavItem(
-                      Icons.favorite_outline, Icons.favorite, 'Consult', 2),
+                      Icons.favorite_outline, Icons.favorite, 'Care', 2),
+                  _buildNavItem(Icons.account_balance_wallet_outlined,
+                      Icons.account_balance_wallet, 'Wallet', 3),
                   _buildNavItem(
-                      Icons.person_outline, Icons.person, 'Profile', 3),
+                      Icons.settings_outlined, Icons.settings, 'Settings', 4),
                 ],
               ),
             ),

@@ -97,14 +97,14 @@ class _LoginScreenState extends State<LoginScreen> {
       context.hideLoadingDialog();
       // Success → navigate
       if (role == "donor") {
-        context.goNextScreen(AppRoutes.donorRootScreen);
+        context.go(AppRoutes.donorRootScreen);
         // context.goNextScreen(AppRoutes.donorRootScreen);
       } else if (role == "specialist") {
-        context.goNextScreen(AppRoutes.specialistRootScreen);
+        context.go(AppRoutes.specialistRootScreen);
       } else if (role == "patient") {
-        context.goNextScreen(AppRoutes.patientRootScreen);
+        context.go(AppRoutes.patientRootScreen);
       } else {
-        context.goNextScreen(AppRoutes.hospitalRootScreen);
+        context.go(AppRoutes.hospitalRootScreen);
       }
     } else {
       // Error → show message

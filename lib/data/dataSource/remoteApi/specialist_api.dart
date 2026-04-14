@@ -10,6 +10,17 @@ class SpecialistApi {
 
   SpecialistApi({required this.apiClient});
 
+  /// GET /api/specialists/patients/{id}
+  Future<ResponseStatusM> getPatientProfileForSpecialist(String patientId) async {
+    var header = await Injection.tokenHeaders();
+    final response = await apiClient.get(
+      '${AppConstants.specialistPatientProfileEP}/$patientId',
+      headers: header,
+    );
+    return ResponseUtils.getApiResponse(response,
+        endpoint: "GET - ${AppConstants.specialistPatientProfileEP}/$patientId");
+  }
+
   Future<ResponseStatusM> getSpecialistProfile(String specialistId) async {
     var header = await Injection.tokenHeaders();
     final response = await apiClient.get(

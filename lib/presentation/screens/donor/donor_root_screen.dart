@@ -10,6 +10,8 @@ import '../../../core/constants/app_routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/patient_provider.dart';
 import '../general/profile/general_profile_screen.dart';
+import '../general/profile/general_setting_screen.dart';
+import '../general/wallet/wallet_screen.dart';
 import 'appointment/donor_appointments_screen.dart';
 import 'donations/donor_donations_screen.dart';
 import 'home/donor_home_screen.dart';
@@ -29,7 +31,8 @@ class _DonorRootScreenState extends State<DonorRootScreen> {
     DonorHomeScreen(),
     DonorAppointmentsScreen(),
     DonorDonationsScreen(),
-    GeneralProfileScreen(),
+    WalletScreen(),
+    GeneralSettingScreen(),
   ];
 
   @override
@@ -130,7 +133,11 @@ class _DonorRootScreenState extends State<DonorRootScreen> {
                 icon: Icon(Icons.calendar_today), label: 'Appointments'),
             BottomNavigationBarItem(
                 icon: Icon(Icons.water_drop_outlined), label: 'Donations'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.account_balance_wallet_outlined),
+                label: 'Wallet'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.settings_outlined), label: 'Settings'),
           ],
         ),
       ),

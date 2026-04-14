@@ -7,6 +7,10 @@ import 'package:HealthBridge/presentation/screens/auth/logic_screen.dart';
 import 'package:HealthBridge/presentation/screens/auth/preference_screen.dart';
 import 'package:HealthBridge/presentation/screens/auth/reset_password_screen.dart';
 import 'package:HealthBridge/presentation/screens/auth/verify_account_screen.dart';
+import 'package:HealthBridge/presentation/screens/general/profile/general_profile_screen.dart';
+import 'package:HealthBridge/presentation/screens/general/referral/earn_more_screen.dart';
+import 'package:HealthBridge/presentation/screens/general/referral/referral_wallet_screen.dart';
+import 'package:HealthBridge/presentation/screens/hospital/profile/hospital_profile_screen.dart';
 import 'package:HealthBridge/presentation/screens/splash/splash_screen.dart';
 import 'package:HealthBridge/presentation/screens/donor/appointment/appointment_detail_screen.dart';
 import 'package:HealthBridge/presentation/screens/donor/appointment/appointment_rescheduled_screen.dart';
@@ -38,6 +42,7 @@ import '../../presentation/screens/general/profile/help_center_screen.dart';
 import '../../presentation/screens/general/profile/language_settings_screen.dart';
 import '../../presentation/screens/general/profile/notification_settings_screen.dart';
 import '../../presentation/screens/general/profile/privacy_settings_screen.dart';
+import '../../presentation/screens/general/referral/network_growth_screen.dart';
 import '../../presentation/screens/hospital/donations/donation_appointment_detail_screen.dart';
 import '../../presentation/screens/hospital/donations/record_donation_screen.dart';
 import '../../presentation/screens/hospital/donations/reschedule_appointment_screen.dart';
@@ -46,6 +51,7 @@ import '../../presentation/screens/hospital/donors/donation_history_screen.dart'
 import '../../presentation/screens/hospital/donors/donor_list_screen.dart';
 import '../../presentation/screens/hospital/donors/donor_profile_screen.dart';
 import '../../presentation/screens/hospital/hospital_root_screen.dart';
+import '../../presentation/screens/hospital/inventory/blood_inventory_screen.dart';
 import '../../presentation/screens/hospital/inventory/update_units_screen.dart';
 import '../../presentation/screens/hospital/notifications/hospital_notification_screen.dart';
 import '../../presentation/screens/hospital/profile/onboard/blood_services_screen.dart';
@@ -335,6 +341,11 @@ class AppRouter {
         builder: (context, state) => HospitalRootScreen(),
       ),
       GoRoute(
+        path: AppRoutes.bloodInventory,
+        builder: (context, state) =>
+            const BloodInventoryScreen(showBackArrow: true),
+      ),
+      GoRoute(
         path: AppRoutes.newBloodRequest,
         builder: (context, state) => NewBloodRequestScreen(),
       ),
@@ -423,6 +434,14 @@ class AppRouter {
         },
       ),
       GoRoute(
+        path: AppRoutes.profilePatientAndDonor,
+        builder: (context, state) {
+          // final isUpdateMode = state.extra as bool? ?? false;
+          return GeneralProfileScreen();
+        },
+      ),
+
+      GoRoute(
         path: AppRoutes.availabilitySpecialist,
         builder: (context, state) {
           final isUpdateMode = state.extra as bool? ?? false;
@@ -461,34 +480,44 @@ class AppRouter {
           return SpecialistAppointmentsScreen(showArrow: showArrow);
         },
       ),
-      GoRoute(
-        path: AppRoutes.specialistProfile,
-        builder: (context, state) {
-          final showArrow = state.extra as bool;
-          return SpecialistProfileScreen(showBackArrow: showArrow);
-        },
-      ),
 
       GoRoute(
         path: AppRoutes.patientProfileOnSpecialist,
-        builder: (context, state) => PatientProfileOnSpecialScreen(),
+        builder: (context, state) {
+          final appointment = state.extra as AppointmentModel?;
+          return PatientProfileOnSpecialScreen(appointment: appointment);
+        },
       ),
       GoRoute(
         path: AppRoutes.editPersonalSpecialist,
         builder: (context, state) => EditPersonalInformationScreen(),
       ),
+      GoRoute(
+        path: AppRoutes.specialistProfile,
+        builder: (context, state) => SpecialistProfileScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.hospitalProfile,
+        builder: (context, state) => HospitalProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.referralWallet,
+        builder: (context, state) => ReferralWalletScreen(),
+      ),
+
+      GoRoute(
+        path: AppRoutes.referralEarnMore,
+        builder: (context, state) => EarnMoreScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.referralAnalytic,
+        builder: (context, state) => NetworkGrowthScreen(),
+      ),
       // GoRoute(
-      //   path: AppRoutes.homeSpecialist,
-      //   builder: (context, state) => SpecialistHomeScreen(),
+      //   path: AppRoutes.referralWallet,
+      //   builder: (context, state) => ReferralWalletScreen(),
       // ),
-      // GoRoute(
-      //   path: AppRoutes.specialistRootScreen,
-      //   builder: (context, state) => SpecialistRootScreen(),
-      // ), GoRoute(
-      //   path: AppRoutes.specialistRootScreen,
-      //   builder: (context, state) => SpecialistRootScreen(),
-      // ),
-      //
 
       // GoRoute(
       //   path: AppRoutes.eduRankPickerPath,

@@ -7,6 +7,7 @@ import 'package:HealthBridge/data/dataSource/secureData/secure_storage.dart';
 import 'package:HealthBridge/data/models/auth/auth_model.dart';
 import 'package:HealthBridge/data/models/patient/patient_profile_model.dart';
 import 'package:HealthBridge/data/models/response_status_m.dart';
+import 'package:HealthBridge/data/models/specialist/patient_profile_for_specialist_model.dart';
 import 'package:HealthBridge/data/models/specialist/specialist_profile_model.dart';
 import 'package:HealthBridge/data/models/specialist/specialty_model.dart';
 import 'package:HealthBridge/data/repositories/specialist_repository.dart';
@@ -289,5 +290,20 @@ class SpecialistProvider extends ChangeNotifier {
     }
 
     return res.message ?? 'Failed to update specialist profile';
+  }
+
+  /// Fetch a patient's full profile for a specialist view
+  Future<(PatientProfileForSpecialistModel?, String?)> getPatientProfileForSpecialist(String patientId) async {
+    final res = await getResponse(
+      specialistRepository.getPatientProfileForSpecialist(patientId),
+      shouldLoad: false,
+    );
+
+    if (ResponseUtils.isSuccessful(res)) {
+      if (res.data == null) return (null, 'Invalid server response');
+      final model = PatientProfileForSpecialistModel.fromJson(res.data);
+      return (model, null);
+    }
+    return (null, res.message ?? 'Failed to fetch patient profile');
   }
 }

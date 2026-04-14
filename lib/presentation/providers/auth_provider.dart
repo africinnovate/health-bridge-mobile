@@ -72,7 +72,9 @@ class AuthProvider extends ChangeNotifier {
   donor - ronokinno+01@gmail.com
   hospital - ronokinno+02@gmail.com
   patient - ronokinno+03@gmail.com
-  specialist - ronokinno+04@gmail.com,
+  specialist - ronokinno+04@gmail.com
+
+  123456Aa
 
 Hospital
   africinnovate@gmail.com
